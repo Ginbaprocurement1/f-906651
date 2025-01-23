@@ -1,3 +1,5 @@
+import { Header } from "@/components/Header";
+import { Footer } from "@/components/Footer";
 import { useNavigate } from "react-router-dom";
 import { Layout } from "@/components/layout/Layout";
 import { Button } from "@/components/ui/button";
@@ -118,8 +120,9 @@ const Orders = () => {
   });
 
   return (
-    <Layout>
-      <div className="container mx-auto py-8">
+    <div className="min-h-screen flex flex-col">
+      <Header />
+      <main className="flex-1 container mx-auto mt-32 mb-8">
         <div className="flex items-center gap-4 mb-8">
           <Button
             variant="ghost"
@@ -222,9 +225,9 @@ const Orders = () => {
             ))}
           </div>
         )}
-      </div>
-    </Layout>
+      </main>
+      <Footer />
+    </div>
   );
 };
-
 export default Orders;
