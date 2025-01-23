@@ -190,8 +190,8 @@ const Orders = () => {
                       </div>
                     </AccordionTrigger>
                     <AccordionContent>
-                      <div className="mt-4 space-y-4">
-                        <div className="grid grid-flow-col auto-cols-max gap-4 font-medium text-primary">
+                      <div className="mt-4 space-y-4 w-2/3">
+                        <div className="grid grid-cols-3 gap-4 font-medium text-primary text-left">
                           <div className="truncate"></div>
                           <div className="truncate">Cantidad</div>
                           <div className="truncate">Precio sin IVA</div>
@@ -199,7 +199,7 @@ const Orders = () => {
                         {order.products.map((product, index) => (
                           <div
                             key={index}
-                            className={`grid grid-flow-col auto-cols-max gap-4 items-center ${
+                            className={`grid grid-cols-3 gap-4 items-center text-left ${
                               index === order.products.length - 1 ? "border-0" : "border-b border-muted"
                             } py-2`}
                           >
