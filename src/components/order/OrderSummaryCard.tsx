@@ -222,43 +222,41 @@ export const OrderSummaryCard = ({
   const sendSupplierEmails = async (poId: string, supplierName: string) => {
     try {
       const { data: supplierData, error: supplierError } = await supabase
-        .from("master_suppliers_company")
-        .select("supplier_email")
-        .eq("supplier_name", supplierName)
+        .from('master_suppliers_company')
+        .select('supplier_email')
+        .eq('supplier_name', supplierName)
         .single();
-  
+
       if (supplierError) {
-        console.error("❌ Error fetching supplier email:", supplierError);
+        console.error('Error fetching supplier email:', supplierError);
         throw supplierError;
       }
-  
+
       if (!supplierData?.supplier_email) {
-        console.warn(⚠️ No email found for supplier ${supplierName});
+        console.warn(`No email found for supplier ${supplierName}`);
         return;
       }
-  
-      // Call the new Gmail email function
-      const { error: emailError } = await supabase.functions.invoke("send-order-email", {
+
+      const { error: emailError } = await supabase.functions.invoke('send-order-email', {
         body: {
           supplier_name: supplierName,
           supplier_email: supplierData.supplier_email,
-          po_id: poId,
-        },
+          po_id: poId
+        }
       });
-  
+
       if (emailError) {
-        console.error("❌ Error sending email:", emailError);
+        console.error('Error sending email:', emailError);
         throw emailError;
       }
-  
-      console.log(✅ Email sent successfully to ${supplierName});
-  
+
+      console.log(`Email sent successfully to ${supplierName}`);
     } catch (error) {
-      console.error(❌ Error in sendSupplierEmails for ${supplierName}:, error);
+      console.error(`Error in sendSupplierEmails for ${supplierName}:`, error);
       toast({
         title: "Error",
-        description: No se pudo enviar el email a ${supplierName},
-        variant: "destructive",
+        description: `No se pudo enviar el email a ${supplierName}`,
+        variant: "destructive"
       });
     }
   };
