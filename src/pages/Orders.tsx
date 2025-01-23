@@ -191,25 +191,23 @@ const Orders = () => {
                     </AccordionTrigger>
                     <AccordionContent>
                       <div className="mt-4 space-y-4">
-                        <div className="grid grid-cols-12 gap-4 font-medium text-primary">
-                          <div className="col-span-6 max-w-[50%]">Producto</div>
-                          <div className="col-span-2 text-right">Cantidad</div>
-                          <div className="col-span-4 text-right">Precio sin IVA</div>
+                        <div className="grid grid-flow-col auto-cols-max gap-4 font-medium text-primary">
+                          <div className="truncate"></div>
+                          <div className="truncate">Cantidad</div>
+                          <div className="truncate">Precio sin IVA</div>
                         </div>
                         {order.products.map((product, index) => (
                           <div
                             key={index}
-                            className={`grid grid-cols-12 gap-4 items-center ${
+                            className={`grid grid-flow-col auto-cols-max gap-4 items-center ${
                               index === order.products.length - 1 ? "border-0" : "border-b border-muted"
                             } py-2`}
                           >
-                            <div className="col-span-6 max-w-[50%] text-primary">
-                              {product.product_name}
-                            </div>
-                            <div className="col-span-2 text-right text-muted-foreground">
+                            <div className="truncate text-primary">{product.product_name}</div>
+                            <div className="truncate text-muted-foreground">
                               {product.quantity} {product.product_uom}
                             </div>
-                            <div className="col-span-4 text-right text-muted-foreground">
+                            <div className="truncate text-muted-foreground">
                               {product.price_without_vat.toFixed(2)} €/ud
                             </div>
                           </div>
