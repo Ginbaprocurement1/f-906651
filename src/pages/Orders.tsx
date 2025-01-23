@@ -156,9 +156,9 @@ const Orders = () => {
                 <Accordion type="single" collapsible>
                   <AccordionItem value="products" className="border-none">
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
-                      <div className="space-y-1">
+                      <div className="space-y-[2px]">
                         <h2 className="font-bold text-lg text-primary">{order.po_id}</h2>
-                        <p className="text-sm text-muted-foreground w-1/3 truncate">
+                        <p className="text-sm text-muted-foreground">
                           {format(new Date(order.created_at), "PPP", { locale: es })}
                         </p>
                         <p className="text-primary">{order.supplier_name}</p>
