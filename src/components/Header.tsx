@@ -57,7 +57,7 @@ export const Header = () => {
         <div className="container mx-auto flex items-center justify-between">
           <div className="flex items-center gap-4 flex-1">
             <a href="/" className="text-2xl font-bold">
-              <img src="https://tvytydguhbrnkcflhmnw.supabase.co/storage/v1/object/sign/Imagenes_ginba/logo/Ginbat-removebg-preview%20(1).png?token=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1cmwiOiJJbWFnZW5lc19naW5iYS9sb2dvL0dpbmJhdC1yZW1vdmViZy1wcmV2aWV3ICgxKS5wbmciLCJpYXQiOjE3Mzc2NjIwNDcsImV4cCI6MTc2OTE5ODA0N30.KCmhC4XNOALGjBRqp5p-MCGRKEVGoWFWxobWYH68lPs&t=2025-01-23T19%3A54%3A07.494Z" alt="Logo" className="h-8 w-auto" />
+              <img src="https://drive.google.com/uc?id=1UVeJlo06Vwjr8fnZ6pYZMQKkUNMRAxZj" alt="Logo" className="h-8 w-auto" />
             </a>
             <div className="max-w-xl w-full">
               <form onSubmit={handleSearch} className="relative">
