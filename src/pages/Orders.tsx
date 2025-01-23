@@ -130,7 +130,7 @@ const Orders = () => {
             onClick={() => navigate("/")}
           >
             <ArrowLeft className="mr-2 h-4 w-4" />
-            Seguir Comprando
+            Volver
           </Button>
           <h1 className="text-2xl font-bold text-primary">Pedidos</h1>
         </div>
