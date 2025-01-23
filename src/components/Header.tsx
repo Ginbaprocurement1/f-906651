@@ -56,7 +56,9 @@ export const Header = () => {
       <div className="bg-primary text-white py-3 px-4">
         <div className="container mx-auto flex items-center justify-between">
           <div className="flex items-center gap-4 flex-1">
-            <a href="/" className="text-2xl font-bold">LOGO</a>
+            <a href="/" className="text-2xl font-bold">
+              <img src="https://drive.google.com/uc?id=1UVeJlo06Vwjr8fnZ6pYZMQKkUNMRAxZj" alt="Logo" className="h-8 w-auto" />
+            </a>
             <div className="max-w-xl w-full">
               <form onSubmit={handleSearch} className="relative">
                 <Input 
