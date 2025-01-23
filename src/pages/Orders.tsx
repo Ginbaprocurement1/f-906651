@@ -156,7 +156,7 @@ const Orders = () => {
                 <Accordion type="single" collapsible>
                   <AccordionItem value="products" className="border-none">
                     <div className="grid grid-cols-3 gap-4 mb-4">
-                        <div className="space-y-[2px] truncate text-right">
+                        <div className="space-y-[2px] truncate text-left">
                           <h2 className="font-bold text-lg text-primary truncate">{order.po_id}</h2>
                           <p className="text-sm text-muted-foreground truncate">
                             {format(new Date(order.created_at), "PPP", { locale: es })}
@@ -164,7 +164,7 @@ const Orders = () => {
                           <p className="text-primary truncate">{order.supplier_name}</p>
                         </div>
                       
-                        <div className="space-y-1 truncate text-right">
+                        <div className="space-y-1 truncate text-left">
                           <p className="text-primary truncate">{order.delivery_method}</p>
                           <p className="text-primary truncate">{order.location_name}</p>
                           <p className="text-muted-foreground truncate">{order.address}</p>
@@ -172,7 +172,7 @@ const Orders = () => {
                           <p className="text-muted-foreground truncate">{order.country}</p>
                         </div>
                       
-                        <div className="space-y-1 text-right">
+                        <div className="space-y-1 text-left">
                           <p className="font-medium text-primary truncate">
                             Total sin IVA: {order.total_amount_without_vat.toFixed(2)}€
                           </p>
