@@ -179,7 +179,7 @@ const Orders = () => {
                           <p className="text-muted-foreground truncate">
                             Total con IVA: {(order.total_amount_without_vat * 1.21).toFixed(2)}€
                           </p>
-                          <p className=text-primary truncate">
+                          <p className="text-primary truncate">
                             Método de pago: {order.payment_method}
                           </p>
                         </div>
