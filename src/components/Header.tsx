@@ -57,7 +57,7 @@ export const Header = () => {
         <div className="container mx-auto flex items-center justify-between">
           <div className="flex items-center gap-4 flex-1">
             <a href="/" className="flex items-center">
-              <img src="https://tvytydguhbrnkcflhmnw.supabase.co/storage/v1/object/sign/Imagenes_ginba/logo/Ginbat-removebg-preview%20(1).png?token=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1cmwiOiJJbWFnZW5lc19naW5iYS9sb2dvL0dpbmJhdC1yZW1vdmViZy1wcmV2aWV3ICgxKS5wbmciLCJpYXQiOjE3Mzc2NjIwNDcsImV4cCI6MTc2OTE5ODA0N30.KCmhC4XNOALGjBRqp5p-MCGRKEVGoWFWxobWYH68lPs&t=2025-01-23T19%3A54%3A07.494Z" alt="Logo" className="h-12 w-auto max-w-full" />
+              <img src="https://tvytydguhbrnkcflhmnw.supabase.co/storage/v1/object/sign/Imagenes_ginba/logo/Ginbat-removebg-preview%20(1).png?token=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1cmwiOiJJbWFnZW5lc19naW5iYS9sb2dvL0dpbmJhdC1yZW1vdmViZy1wcmV2aWV3ICgxKS5wbmciLCJpYXQiOjE3Mzc2NjMxMjcsImV4cCI6MTc2OTE5OTEyN30.Wypdm4f_buM-icwpwYV5ICrQJ2-3NpnfX6mwsAay_RM&t=2025-01-23T20%3A12%3A07.357Z" alt="Logo" className="h-12 w-auto max-w-full" />
             </a>
             <div className="max-w-xl w-full">
               <form onSubmit={handleSearch} className="relative">
