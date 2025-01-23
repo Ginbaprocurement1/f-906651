@@ -155,29 +155,31 @@ const Orders = () => {
               <Card key={order.po_id} className="p-6 bg-white shadow-md hover:shadow-lg transition-shadow">
                 <Accordion type="single" collapsible>
                   <AccordionItem value="products" className="border-none">
-                    <div className="grid grid-cols-3 gap-4 mb-4">
-                      <div className="space-y-[2px] truncate text-right">
-                        <h2 className="font-bold text-lg text-primary truncate">{order.po_id}</h2>
-                        <p className="text-sm text-muted-foreground truncate">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                      <div className="space-y-2">
+                        <h2 className="font-bold text-lg text-primary">{order.po_id}</h2>
+                        <p className="text-sm text-muted-foreground">
                           {format(new Date(order.created_at), "PPP", { locale: es })}
                         </p>
-                        <p className="text-primary truncate">{order.supplier_name}</p>
+                        <p className="text-primary">{order.supplier_name}</p>
                       </div>
-                      <div className="space-y-1 truncate text-right">
-                            <p className="text-primary truncate">{order.delivery_method}</p>
-                            <p className="text-primary truncate">{order.location_name}</p>
-                            <p className="text-muted-foreground truncate">{order.address}</p>
-                            <p className="text-muted-foreground truncate">{`${order.zip_code} ${order.town}`}</p>
-                            <p className="text-muted-foreground truncate">{order.country}</p>
+                      <div className="space-y-1">
+                        <div className="flex justify-between items-start">
+                          <div>
+                            <p className="text-primary">{order.delivery_method}</p>
+                            <p className="text-primary">{order.location_name}</p>
+                            <p className="text-muted-foreground">{order.address}</p>
+                            <p className="text-muted-foreground">{`${order.zip_code} ${order.town}`}</p>
+                            <p className="text-muted-foreground">{order.country}</p>
                           </div>
-                          <div className="space-y-1 text-right">
-                            <p className="font-medium text-primary truncate">
+                          <div className="text-right">
+                            <p className="font-medium text-primary">
                               Total sin IVA: {order.total_amount_without_vat.toFixed(2)}€
                             </p>
-                            <p className="text-primary truncate">
+                            <p className="font-medium text-primary">
                               Total con IVA: {(order.total_amount_without_vat * 1.21).toFixed(2)}€
                             </p>
-                            <p className="text-muted-foreground truncate">
+                            <p className="text-muted-foreground">
                               Método de pago: {order.payment_method}
                             </p>
                           </div>
