@@ -123,25 +123,25 @@ const Orders = () => {
         <div className="flex items-center gap-4 mb-8">
           <Button
             variant="ghost"
-            size="icon"
+            className="text-primary hover:text-secondary"
             onClick={() => navigate("/")}
-            className="h-8 w-8"
           >
-            <ArrowLeft className="h-4 w-4" />
+            <ArrowLeft className="mr-2 h-4 w-4" />
+            Seguir Comprando
           </Button>
-          <h1 className="text-2xl font-bold">Pedidos</h1>
+          <h1 className="text-2xl font-bold text-primary">Pedidos</h1>
         </div>
 
         {isLoading ? (
           <div className="space-y-4">
             {[1, 2, 3].map((i) => (
-              <Card key={i} className="p-6">
+              <Card key={i} className="p-6 bg-white shadow-md">
                 <Skeleton className="h-24 w-full" />
               </Card>
             ))}
           </div>
         ) : orders?.length === 0 ? (
-          <Card className="p-6">
+          <Card className="p-6 bg-white shadow-md">
             <p className="text-center text-muted-foreground">
               No hay pedidos para mostrar
             </p>
@@ -149,50 +149,50 @@ const Orders = () => {
         ) : (
           <div className="space-y-4">
             {orders?.map((order) => (
-              <Card key={order.po_id} className="p-6">
+              <Card key={order.po_id} className="p-6 bg-white shadow-md hover:shadow-lg transition-shadow">
                 <Accordion type="single" collapsible>
                   <AccordionItem value="products" className="border-none">
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
-                      <div>
-                        <h2 className="font-bold text-lg">{order.po_id}</h2>
+                      <div className="space-y-2">
+                        <h2 className="font-bold text-lg text-primary">{order.po_id}</h2>
                         <p className="text-sm text-muted-foreground">
                           {format(new Date(order.created_at), "PPP", { locale: es })}
                         </p>
-                        <p>{order.supplier_name}</p>
+                        <p className="text-primary">{order.supplier_name}</p>
                       </div>
-                      <div>
-                        <p>{order.delivery_method}</p>
-                        <p>{order.location_name}</p>
-                        <p>{order.address}</p>
-                        <p>{`${order.zip_code} ${order.town}`}</p>
-                        <p>{order.country}</p>
+                      <div className="space-y-1">
+                        <div className="flex justify-between items-start">
+                          <div>
+                            <p className="text-primary">{order.delivery_method}</p>
+                            <p className="text-primary">{order.location_name}</p>
+                            <p className="text-muted-foreground">{order.address}</p>
+                            <p className="text-muted-foreground">{`${order.zip_code} ${order.town}`}</p>
+                            <p className="text-muted-foreground">{order.country}</p>
+                          </div>
+                          <div className="text-right">
+                            <p className="font-medium text-primary">
+                              Total sin IVA: {order.total_amount_without_vat.toFixed(2)}€
+                            </p>
+                            <p className="font-medium text-primary">
+                              Total con IVA: {(order.total_amount_without_vat * 1.21).toFixed(2)}€
+                            </p>
+                            <p className="text-muted-foreground">
+                              Método de pago: {order.payment_method}
+                            </p>
+                          </div>
+                        </div>
                       </div>
                     </div>
 
-                    <div className="flex flex-col gap-2 mb-4">
-                      <p>
-                        <span className="font-medium">Total sin IVA:</span>{" "}
-                        {order.total_amount_without_vat.toFixed(2)}€
-                      </p>
-                      <p>
-                        <span className="font-medium">Total con IVA:</span>{" "}
-                        {(order.total_amount_without_vat * 1.21).toFixed(2)}€
-                      </p>
-                      <p>
-                        <span className="font-medium">Método de pago:</span>{" "}
-                        {order.payment_method}
-                      </p>
-                    </div>
-
-                    <AccordionTrigger className="py-0">
+                    <AccordionTrigger className="py-0 text-primary hover:text-secondary">
                       <div className="flex items-center gap-2">
                         <span>Productos</span>
                       </div>
                     </AccordionTrigger>
                     <AccordionContent>
                       <div className="mt-4 space-y-4">
-                        <div className="grid grid-cols-12 gap-4 font-medium">
-                          <div className="col-span-6 break-words max-w-[50%]"></div>
+                        <div className="grid grid-cols-12 gap-4 font-medium text-primary">
+                          <div className="col-span-6 max-w-[50%]">Producto</div>
                           <div className="col-span-2 text-right">Cantidad</div>
                           <div className="col-span-4 text-right">Precio sin IVA</div>
                         </div>
@@ -200,16 +200,16 @@ const Orders = () => {
                           <div
                             key={index}
                             className={`grid grid-cols-12 gap-4 items-center ${
-                              index === order.products.length - 1 ? "border-0" : "border-b border-gray-200"
+                              index === order.products.length - 1 ? "border-0" : "border-b border-muted"
                             } py-2`}
                           >
-                            <div className="col-span-6 break-words max-w-[50%]">
+                            <div className="col-span-6 max-w-[50%] text-primary">
                               {product.product_name}
                             </div>
-                            <div className="col-span-2 text-right">
+                            <div className="col-span-2 text-right text-muted-foreground">
                               {product.quantity} {product.product_uom}
                             </div>
-                            <div className="col-span-4 text-right">
+                            <div className="col-span-4 text-right text-muted-foreground">
                               {product.price_without_vat.toFixed(2)} €/ud
                             </div>
                           </div>
