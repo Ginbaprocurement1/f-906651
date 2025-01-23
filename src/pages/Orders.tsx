@@ -163,9 +163,9 @@ const Orders = () => {
                           </p>
                           <p className="text-primary truncate">{order.supplier_name}</p>
                         </div>
-                      
+                    
                         <div className="space-y-1 truncate text-left">
-                          <p className="text-primary truncate">{order.delivery_method}</p>
+                          <p className="font-medium text-primary truncate">{order.delivery_method}</p>
                           <p className="text-primary truncate">{order.location_name}</p>
                           <p className="text-muted-foreground truncate">{order.address}</p>
                           <p className="text-muted-foreground truncate">{`${order.zip_code} ${order.town}`}</p>
@@ -176,10 +176,10 @@ const Orders = () => {
                           <p className="font-medium text-primary truncate">
                             Total sin IVA: {order.total_amount_without_vat.toFixed(2)}€
                           </p>
-                          <p className="font-medium text-primary truncate">
+                          <p className="text-muted-foreground truncate">
                             Total con IVA: {(order.total_amount_without_vat * 1.21).toFixed(2)}€
                           </p>
-                          <p className="text-muted-foreground truncate">
+                          <p className=text-primary truncate">
                             Método de pago: {order.payment_method}
                           </p>
                         </div>
