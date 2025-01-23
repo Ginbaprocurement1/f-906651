@@ -192,9 +192,9 @@ const Orders = () => {
                     <AccordionContent>
                       <div className="mt-4 space-y-4 w-2/3">
                         <div className="grid grid-cols-3 gap-4 font-medium text-primary text-left">
-                          <div className="truncate"></div>
-                          <div className="truncate">Cantidad</div>
-                          <div className="truncate">Precio sin IVA</div>
+                          <div></div>
+                          <div>Cantidad</div>
+                          <div>Precio sin IVA</div>
                         </div>
                         {order.products.map((product, index) => (
                           <div
@@ -203,11 +203,11 @@ const Orders = () => {
                               index === order.products.length - 1 ? "border-0" : "border-b border-muted"
                             } py-2`}
                           >
-                            <div className="truncate text-primary">{product.product_name}</div>
-                            <div className="truncate text-muted-foreground">
+                            <div className="text-primary break-words">{product.product_name}</div>
+                            <div className="text-muted-foreground break-words">
                               {product.quantity} {product.product_uom}
                             </div>
-                            <div className="truncate text-muted-foreground">
+                            <div className="text-muted-foreground break-words">
                               {product.price_without_vat.toFixed(2)} €/ud
                             </div>
                           </div>
