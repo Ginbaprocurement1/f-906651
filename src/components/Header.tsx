@@ -57,7 +57,7 @@ export const Header = () => {
         <div className="container mx-auto flex items-center justify-between">
           <div className="flex items-center gap-4 flex-1">
             <a href="/" className="text-2xl font-bold">
-              <img src="https://drive.usercontent.google.com/download?id=1UVeJlo06Vwjr8fnZ6pYZMQKkUNMRAxZj&authuser=0" alt="Logo" className="h-8 w-auto" />
+              <img src="https://drive.google.com/uc?id=1UVeJlo06Vwjr8fnZ6pYZMQKkUNMRAxZj" alt="Logo" className="h-8 w-auto" />
             </a>
             <div className="max-w-xl w-full">
               <form onSubmit={handleSearch} className="relative">
