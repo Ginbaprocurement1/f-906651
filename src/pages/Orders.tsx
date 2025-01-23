@@ -189,7 +189,7 @@ const Orders = () => {
                         <span>Productos</span>
                       </div>
                     </AccordionTrigger>
-                    <AccordionContent>
+                    <AccordionContent className="bg-gray-200">
                       <div className="mt-4 space-y-4 w-3/4">
                         <div className="grid grid-cols-3 gap-4 font-medium text-primary text-left">
                           <div></div>
