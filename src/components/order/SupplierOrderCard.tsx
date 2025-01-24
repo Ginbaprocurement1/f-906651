@@ -72,10 +72,14 @@ export const SupplierOrderCard = ({
     });
     
     onDeliveryMethodChange(method);
-    onLocationSelect("");
+    onLocationSelect("none"); // Changed from empty string to "none"
   };
 
   const handleLocationSelect = async (locationId: string, locationData?: any) => {
+    if (!locationId) {
+      locationId = "none"; // Ensure we never pass an empty string
+    }
+    
     onLocationSelect(locationId);
     
     if (items[0]?.delivery_method === "Envío") {
@@ -123,7 +127,7 @@ export const SupplierOrderCard = ({
 
         <div className="space-y-4">
           <LocationSelect
-            selectedLocation={selectedLocation}
+            selectedLocation={selectedLocation || "none"} // Ensure we never pass an empty string
             onLocationSelect={handleLocationSelect}
             clientLocations={clientLocations}
             isDelivery={items[0]?.delivery_method === "Envío"}
