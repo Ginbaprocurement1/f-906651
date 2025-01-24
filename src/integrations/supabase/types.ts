@@ -131,6 +131,13 @@ export type Database = {
             foreignKeyName: "email_messages_supplier_name_fkey"
             columns: ["supplier_name"]
             isOneToOne: false
+            referencedRelation: "invoice_totals"
+            referencedColumns: ["supplier_name"]
+          },
+          {
+            foreignKeyName: "email_messages_supplier_name_fkey"
+            columns: ["supplier_name"]
+            isOneToOne: false
             referencedRelation: "master_suppliers_company"
             referencedColumns: ["supplier_name"]
           },
@@ -154,6 +161,116 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "unique_rfq_suppliers"
             referencedColumns: ["supplier_name"]
+          },
+        ]
+      }
+      invoice_header: {
+        Row: {
+          company_id: number | null
+          created_at: string
+          invoice_date: string
+          invoice_due_date: string
+          invoice_id: string
+          pdf_url: string | null
+          po_id: string | null
+          status: string
+          supplier_id: number | null
+        }
+        Insert: {
+          company_id?: number | null
+          created_at?: string
+          invoice_date: string
+          invoice_due_date: string
+          invoice_id?: string
+          pdf_url?: string | null
+          po_id?: string | null
+          status: string
+          supplier_id?: number | null
+        }
+        Update: {
+          company_id?: number | null
+          created_at?: string
+          invoice_date?: string
+          invoice_due_date?: string
+          invoice_id?: string
+          pdf_url?: string | null
+          po_id?: string | null
+          status?: string
+          supplier_id?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "invoice_header_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "master_client_company"
+            referencedColumns: ["company_id"]
+          },
+          {
+            foreignKeyName: "invoice_header_po_id_fkey"
+            columns: ["po_id"]
+            isOneToOne: false
+            referencedRelation: "po_header"
+            referencedColumns: ["po_id"]
+          },
+          {
+            foreignKeyName: "invoice_header_supplier_id_fkey"
+            columns: ["supplier_id"]
+            isOneToOne: false
+            referencedRelation: "master_suppliers_company"
+            referencedColumns: ["supplier_id"]
+          },
+        ]
+      }
+      invoice_line: {
+        Row: {
+          created_at: string
+          id: number
+          invoice_id: string | null
+          price_with_vat: number
+          price_without_vat: number
+          product_id: number | null
+          quantity: number
+        }
+        Insert: {
+          created_at?: string
+          id?: never
+          invoice_id?: string | null
+          price_with_vat: number
+          price_without_vat: number
+          product_id?: number | null
+          quantity: number
+        }
+        Update: {
+          created_at?: string
+          id?: never
+          invoice_id?: string | null
+          price_with_vat?: number
+          price_without_vat?: number
+          product_id?: number | null
+          quantity?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "invoice_line_invoice_id_fkey"
+            columns: ["invoice_id"]
+            isOneToOne: false
+            referencedRelation: "invoice_header"
+            referencedColumns: ["invoice_id"]
+          },
+          {
+            foreignKeyName: "invoice_line_invoice_id_fkey"
+            columns: ["invoice_id"]
+            isOneToOne: false
+            referencedRelation: "invoice_totals"
+            referencedColumns: ["invoice_id"]
+          },
+          {
+            foreignKeyName: "invoice_line_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "master_product"
+            referencedColumns: ["product_id"]
           },
         ]
       }
@@ -348,6 +465,13 @@ export type Database = {
             foreignKeyName: "master_product_supplier_name_fkey"
             columns: ["supplier_name"]
             isOneToOne: false
+            referencedRelation: "invoice_totals"
+            referencedColumns: ["supplier_name"]
+          },
+          {
+            foreignKeyName: "master_product_supplier_name_fkey"
+            columns: ["supplier_name"]
+            isOneToOne: false
             referencedRelation: "master_suppliers_company"
             referencedColumns: ["supplier_name"]
           },
@@ -531,6 +655,13 @@ export type Database = {
             columns: ["supplier_company_name"]
             isOneToOne: false
             referencedRelation: "email_messages_view"
+            referencedColumns: ["supplier_name"]
+          },
+          {
+            foreignKeyName: "master_suppliers_user_supplier_company_name_fkey"
+            columns: ["supplier_company_name"]
+            isOneToOne: false
+            referencedRelation: "invoice_totals"
             referencedColumns: ["supplier_name"]
           },
           {
@@ -854,6 +985,35 @@ export type Database = {
           supplier_user_name: string | null
         }
         Relationships: []
+      }
+      invoice_totals: {
+        Row: {
+          company_id: number | null
+          invoice_date: string | null
+          invoice_due_date: string | null
+          invoice_id: string | null
+          pdf_url: string | null
+          status: string | null
+          supplier_id: number | null
+          supplier_name: string | null
+          total_amount: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "invoice_header_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "master_client_company"
+            referencedColumns: ["company_id"]
+          },
+          {
+            foreignKeyName: "invoice_header_supplier_id_fkey"
+            columns: ["supplier_id"]
+            isOneToOne: false
+            referencedRelation: "master_suppliers_company"
+            referencedColumns: ["supplier_id"]
+          },
+        ]
       }
       requests_and_products_view: {
         Row: {
