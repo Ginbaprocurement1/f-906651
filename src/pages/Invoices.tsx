@@ -1,5 +1,4 @@
 import { useEffect, useState } from "react";
-import { Layout } from "@/components/layout/Layout";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Download, Search, ArrowLeft } from "lucide-react";
@@ -26,6 +25,8 @@ import { format } from "date-fns";
 import { es } from "date-fns/locale";
 import { DatePickerWithRange } from "@/components/ui/date-range-picker";
 import { DateRange } from "react-day-picker";
+import { Header } from "@/components/Header";
+import { Footer } from "@/components/Footer";
 
 interface Invoice {
   invoice_id: string;
