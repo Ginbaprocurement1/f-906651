@@ -192,25 +192,6 @@ const Invoices = () => {
                   onDateChange={setFilterDate}
                 />
               </div>
-
-              <div>
-                <label className="text-sm font-medium mb-1 block">
-                  Proveedor
-                </label>
-                <Select value={filterSupplier} onValueChange={setFilterSupplier}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Todos los proveedores" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="all">Todos los proveedores</SelectItem>
-                    {suppliers.map((supplier) => (
-                      <SelectItem key={supplier} value={supplier}>
-                        {supplier}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
             </div>
           </div>
 
