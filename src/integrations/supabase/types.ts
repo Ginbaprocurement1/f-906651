@@ -394,7 +394,12 @@ export type Database = {
       }
       master_suppliers_company: {
         Row: {
+          address: string | null
+          CIF: string | null
+          country: string | null
           created_at: string
+          iban: string | null
+          province: string | null
           supplier_category_l1: string | null
           supplier_category_l2: string | null
           supplier_email: string | null
@@ -402,9 +407,16 @@ export type Database = {
           supplier_median_delivery_days: number | null
           supplier_name: string | null
           supplier_rating: number | null
+          town: string | null
+          zip_code: number | null
         }
         Insert: {
+          address?: string | null
+          CIF?: string | null
+          country?: string | null
           created_at?: string
+          iban?: string | null
+          province?: string | null
           supplier_category_l1?: string | null
           supplier_category_l2?: string | null
           supplier_email?: string | null
@@ -412,9 +424,16 @@ export type Database = {
           supplier_median_delivery_days?: number | null
           supplier_name?: string | null
           supplier_rating?: number | null
+          town?: string | null
+          zip_code?: number | null
         }
         Update: {
+          address?: string | null
+          CIF?: string | null
+          country?: string | null
           created_at?: string
+          iban?: string | null
+          province?: string | null
           supplier_category_l1?: string | null
           supplier_category_l2?: string | null
           supplier_email?: string | null
@@ -422,6 +441,8 @@ export type Database = {
           supplier_median_delivery_days?: number | null
           supplier_name?: string | null
           supplier_rating?: number | null
+          town?: string | null
+          zip_code?: number | null
         }
         Relationships: []
       }
