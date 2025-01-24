@@ -124,16 +124,6 @@ const Invoices = () => {
       <div className="container mx-auto px-4 py-8">
         <div className="flex justify-between items-center mb-8">
           <h1 className="text-3xl font-bold">Mis Facturas</h1>
-          <div className="flex gap-4">
-            <Button variant="outline" className="gap-2">
-              <Filter className="h-4 w-4" />
-              Filtros
-            </Button>
-            <Button variant="outline" className="gap-2">
-              <ChartLine className="h-4 w-4" />
-              Ver gráfico
-            </Button>
-          </div>
         </div>
 
         <div className="bg-white rounded-lg shadow-md mb-8">
