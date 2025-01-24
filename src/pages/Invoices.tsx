@@ -37,7 +37,7 @@ const Invoices = () => {
   const [searchTerm, setSearchTerm] = useState("");
   const [filterStatus, setFilterStatus] = useState<string>("all");
   const [filterDate, setFilterDate] = useState("");
-  const [filterSupplier, setFilterSupplier] = useState("");
+  const [filterSupplier, setFilterSupplier] = useState("all");
   const [suppliers, setSuppliers] = useState<string[]>([]);
   const { toast } = useToast();
 
@@ -100,7 +100,7 @@ const Invoices = () => {
     const matchesStatus = filterStatus === "all" || invoice.status === filterStatus;
     const matchesDate = !filterDate || invoice.invoice_date === filterDate;
     const matchesSupplier =
-      !filterSupplier || invoice.supplier_name === filterSupplier;
+      filterSupplier === "all" || invoice.supplier_name === filterSupplier;
 
     return matchesSearch && matchesStatus && matchesDate && matchesSupplier;
   });
@@ -181,7 +181,7 @@ const Invoices = () => {
                     <SelectValue placeholder="Todos los proveedores" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="">Todos los proveedores</SelectItem>
+                    <SelectItem value="all">Todos los proveedores</SelectItem>
                     {suppliers.map((supplier) => (
                       <SelectItem key={supplier} value={supplier}>
                         {supplier}
