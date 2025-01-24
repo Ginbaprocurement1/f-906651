@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { Layout } from "@/components/layout/Layout";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Download, Search, Filter, ChartLine } from "lucide-react";
+import { Download, Search, ArrowLeft } from "lucide-react";
 import {
   Select,
   SelectContent,
@@ -21,6 +21,11 @@ import {
   Tooltip,
   ResponsiveContainer,
 } from "recharts";
+import { useNavigate } from "react-router-dom";
+import { format } from "date-fns";
+import { es } from "date-fns/locale";
+import { DatePickerWithRange } from "@/components/ui/date-range-picker";
+import { DateRange } from "react-day-picker";
 
 interface Invoice {
   invoice_id: string;
@@ -33,10 +38,11 @@ interface Invoice {
 }
 
 const Invoices = () => {
+  const navigate = useNavigate();
   const [invoices, setInvoices] = useState<Invoice[]>([]);
   const [searchTerm, setSearchTerm] = useState("");
   const [filterStatus, setFilterStatus] = useState<string>("all");
-  const [filterDate, setFilterDate] = useState("");
+  const [filterDate, setFilterDate] = useState<DateRange | undefined>();
   const [filterSupplier, setFilterSupplier] = useState("all");
   const [suppliers, setSuppliers] = useState<string[]>([]);
   const { toast } = useToast();
@@ -98,9 +104,14 @@ const Invoices = () => {
       invoice.invoice_id.toLowerCase().includes(searchTerm.toLowerCase()) ||
       invoice.supplier_name.toLowerCase().includes(searchTerm.toLowerCase());
     const matchesStatus = filterStatus === "all" || invoice.status === filterStatus;
-    const matchesDate = !filterDate || invoice.invoice_date === filterDate;
     const matchesSupplier =
       filterSupplier === "all" || invoice.supplier_name === filterSupplier;
+    
+    // Date range filter
+    const matchesDate = !filterDate?.from || !filterDate?.to || (
+      new Date(invoice.invoice_date) >= filterDate.from &&
+      new Date(invoice.invoice_date) <= filterDate.to
+    );
 
     return matchesSearch && matchesStatus && matchesDate && matchesSupplier;
   });
@@ -120,10 +131,19 @@ const Invoices = () => {
     .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
 
   return (
-    <Layout>
-      <div className="container mx-auto px-4 py-8">
-        <div className="flex justify-between items-center mb-8">
-          <h1 className="text-3xl font-bold">Mis Facturas</h1>
+    <div className="min-h-screen flex flex-col">
+      <Header />
+      <main className="flex-1 container mx-auto mt-32 mb-8">
+        <div className="flex items-center gap-4 mb-8">
+          <Button
+            variant="ghost"
+            className="text-primary hover:text-secondary"
+            onClick={() => navigate("/")}
+          >
+            <ArrowLeft className="mr-2 h-4 w-4" />
+            Volver
+          </Button>
+          <h1 className="text-2xl font-bold text-primary">Mis Facturas</h1>
         </div>
 
         <div className="bg-white rounded-lg shadow-md mb-8">
@@ -161,15 +181,34 @@ const Invoices = () => {
                   </SelectContent>
                 </Select>
               </div>
+
               <div>
                 <label className="text-sm font-medium mb-1 block">
-                  Fecha
+                  Rango de fechas
                 </label>
-                <Input
-                  type="date"
-                  value={filterDate}
-                  onChange={(e) => setFilterDate(e.target.value)}
+                <DatePickerWithRange 
+                  date={filterDate} 
+                  onDateChange={setFilterDate}
                 />
+              </div>
+
+              <div>
+                <label className="text-sm font-medium mb-1 block">
+                  Proveedor
+                </label>
+                <Select value={filterSupplier} onValueChange={setFilterSupplier}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Todos los proveedores" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">Todos los proveedores</SelectItem>
+                    {suppliers.map((supplier) => (
+                      <SelectItem key={supplier} value={supplier}>
+                        {supplier}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               </div>
             </div>
           </div>
@@ -181,6 +220,7 @@ const Invoices = () => {
                   <tr className="border-b">
                     <th className="text-left py-3 px-4">Nº Factura</th>
                     <th className="text-left py-3 px-4">Fecha emisión</th>
+                    <th className="text-left py-3 px-4">Fecha vencimiento</th>
                     <th className="text-left py-3 px-4">Proveedor</th>
                     <th className="text-left py-3 px-4">Importe (con IVA)</th>
                     <th className="text-left py-3 px-4">Estado</th>
@@ -192,7 +232,10 @@ const Invoices = () => {
                     <tr key={invoice.invoice_id} className="border-b last:border-0">
                       <td className="py-3 px-4">{invoice.invoice_id}</td>
                       <td className="py-3 px-4">
-                        {new Date(invoice.invoice_date).toLocaleDateString()}
+                        {format(new Date(invoice.invoice_date), "dd/MM/yyyy")}
+                      </td>
+                      <td className="py-3 px-4">
+                        {format(new Date(invoice.invoice_due_date), "dd/MM/yyyy")}
                       </td>
                       <td className="py-3 px-4">{invoice.supplier_name}</td>
                       <td className="py-3 px-4">
@@ -250,8 +293,9 @@ const Invoices = () => {
             </ResponsiveContainer>
           </div>
         </div>
-      </div>
-    </Layout>
+      </main>
+      <Footer />
+    </div>
   );
 };
 
