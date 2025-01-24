@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Download, Search, ArrowLeft } from "lucide-react";
+import { Download, Search, ArrowLeft, MoreVertical, X } from "lucide-react";
 import {
   Select,
   SelectContent,
@@ -27,6 +27,22 @@ import { DatePickerWithRange } from "@/components/ui/date-range-picker";
 import { DateRange } from "react-day-picker";
 import { Header } from "@/components/Header";
 import { Footer } from "@/components/Footer";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 
 interface Invoice {
   invoice_id: string;
@@ -46,6 +62,8 @@ const Invoices = () => {
   const [filterDate, setFilterDate] = useState<DateRange | undefined>();
   const [filterSupplier, setFilterSupplier] = useState("all");
   const [suppliers, setSuppliers] = useState<string[]>([]);
+  const [selectedInvoiceId, setSelectedInvoiceId] = useState<string | null>(null);
+  const [showConfirmDialog, setShowConfirmDialog] = useState(false);
   const { toast } = useToast();
 
   useEffect(() => {
@@ -87,6 +105,43 @@ const Invoices = () => {
     }
   };
 
+  const handleMarkAsPaid = async (invoiceId: string) => {
+    try {
+      const { error } = await supabase
+        .from("invoice_header")
+        .update({ status: "Pagada" })
+        .eq("invoice_id", invoiceId);
+
+      if (error) throw error;
+
+      setShowConfirmDialog(false);
+      fetchInvoices();
+      toast({
+        title: "Éxito",
+        description: "La factura ha sido marcada como pagada",
+      });
+    } catch (error) {
+      console.error("Error updating invoice:", error);
+      toast({
+        variant: "destructive",
+        title: "Error",
+        description: "No se pudo actualizar el estado de la factura",
+      });
+    }
+  };
+
+  const handleDownloadInvoice = (pdfUrl: string | null) => {
+    if (pdfUrl) {
+      window.open(pdfUrl, '_blank');
+    } else {
+      toast({
+        variant: "destructive",
+        title: "Error",
+        description: "No hay PDF disponible para esta factura",
+      });
+    }
+  };
+
   const getStatusColor = (status: string) => {
     switch (status) {
       case "Pagada":
@@ -108,7 +163,6 @@ const Invoices = () => {
     const matchesSupplier =
       filterSupplier === "all" || invoice.supplier_name === filterSupplier;
     
-    // Date range filter
     const matchesDate = !filterDate?.from || !filterDate?.to || (
       new Date(invoice.invoice_date) >= filterDate.from &&
       new Date(invoice.invoice_date) <= filterDate.to
@@ -187,10 +241,22 @@ const Invoices = () => {
                 <label className="text-sm font-medium mb-1 block">
                   Rango de fechas
                 </label>
-                <DatePickerWithRange 
-                  date={filterDate} 
-                  onDateChange={setFilterDate}
-                />
+                <div className="flex items-center gap-2">
+                  <DatePickerWithRange 
+                    date={filterDate} 
+                    onDateChange={setFilterDate}
+                  />
+                  {filterDate && (
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      onClick={() => setFilterDate(undefined)}
+                      className="h-8 w-8"
+                    >
+                      <X className="h-4 w-4" />
+                    </Button>
+                  )}
+                </div>
               </div>
             </div>
           </div>
@@ -236,15 +302,28 @@ const Invoices = () => {
                         </span>
                       </td>
                       <td className="py-3 px-4 text-right">
-                        {invoice.pdf_url && (
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => window.open(invoice.pdf_url!, "_blank")}
-                          >
-                            <Download className="h-4 w-4" />
-                          </Button>
-                        )}
+                        <DropdownMenu>
+                          <DropdownMenuTrigger asChild>
+                            <Button variant="ghost" size="icon">
+                              <MoreVertical className="h-4 w-4" />
+                            </Button>
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent align="end">
+                            <DropdownMenuItem
+                              onClick={() => {
+                                setSelectedInvoiceId(invoice.invoice_id);
+                                setShowConfirmDialog(true);
+                              }}
+                            >
+                              Marcar "factura pagada"
+                            </DropdownMenuItem>
+                            <DropdownMenuItem
+                              onClick={() => handleDownloadInvoice(invoice.pdf_url)}
+                            >
+                              Descargar factura
+                            </DropdownMenuItem>
+                          </DropdownMenuContent>
+                        </DropdownMenu>
                       </td>
                     </tr>
                   ))}
@@ -277,6 +356,23 @@ const Invoices = () => {
         </div>
       </main>
       <Footer />
+
+      <AlertDialog open={showConfirmDialog} onOpenChange={setShowConfirmDialog}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Confirmar acción</AlertDialogTitle>
+            <AlertDialogDescription>
+              ¿Estás seguro que quieres marcar esta factura como pagada?
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+            <AlertDialogAction onClick={() => selectedInvoiceId && handleMarkAsPaid(selectedInvoiceId)}>
+              Confirmar
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 };
