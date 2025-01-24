@@ -180,7 +180,7 @@ const Invoices = () => {
                 <thead>
                   <tr className="border-b">
                     <th className="text-left py-3 px-4">Nº Factura</th>
-                    <th className="text-left py-3 px-4">Fecha</th>
+                    <th className="text-left py-3 px-4">Fecha emisión</th>
                     <th className="text-left py-3 px-4">Proveedor</th>
                     <th className="text-left py-3 px-4">Importe</th>
                     <th className="text-left py-3 px-4">Estado</th>
