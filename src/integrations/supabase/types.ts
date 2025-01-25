@@ -699,6 +699,7 @@ export type Database = {
           company_id: number | null
           created_at: string
           id: string
+          supplier_id: number | null
           user_email: string | null
           user_name: string | null
           user_role: string | null
@@ -708,6 +709,7 @@ export type Database = {
           company_id?: number | null
           created_at?: string
           id: string
+          supplier_id?: number | null
           user_email?: string | null
           user_name?: string | null
           user_role?: string | null
@@ -717,6 +719,7 @@ export type Database = {
           company_id?: number | null
           created_at?: string
           id?: string
+          supplier_id?: number | null
           user_email?: string | null
           user_name?: string | null
           user_role?: string | null
@@ -729,6 +732,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "master_client_company"
             referencedColumns: ["company_id"]
+          },
+          {
+            foreignKeyName: "master_user_supplier_id_fkey"
+            columns: ["supplier_id"]
+            isOneToOne: false
+            referencedRelation: "master_suppliers_company"
+            referencedColumns: ["supplier_id"]
           },
         ]
       }
@@ -883,29 +893,7 @@ export type Database = {
           supplier_id?: number
           units?: number | null
         }
-        Relationships: [
-          {
-            foreignKeyName: "requests_and_products_company_id_fkey"
-            columns: ["company_id"]
-            isOneToOne: false
-            referencedRelation: "master_client_company"
-            referencedColumns: ["company_id"]
-          },
-          {
-            foreignKeyName: "requests_and_products_product_id_fkey"
-            columns: ["product_id"]
-            isOneToOne: false
-            referencedRelation: "master_product"
-            referencedColumns: ["product_id"]
-          },
-          {
-            foreignKeyName: "requests_and_products_supplier_id_fkey"
-            columns: ["supplier_id"]
-            isOneToOne: false
-            referencedRelation: "master_suppliers_company"
-            referencedColumns: ["supplier_id"]
-          },
-        ]
+        Relationships: []
       }
       stock: {
         Row: {
@@ -961,15 +949,7 @@ export type Database = {
           num_rfq_sin_respuesta: number | null
           num_sin_respuesta: number | null
         }
-        Relationships: [
-          {
-            foreignKeyName: "requests_and_products_company_id_fkey"
-            columns: ["company_id"]
-            isOneToOne: false
-            referencedRelation: "master_client_company"
-            referencedColumns: ["company_id"]
-          },
-        ]
+        Relationships: []
       }
       email_messages_view: {
         Row: {
@@ -1030,15 +1010,7 @@ export type Database = {
           supplier_rating: number | null
           units: number | null
         }
-        Relationships: [
-          {
-            foreignKeyName: "requests_and_products_company_id_fkey"
-            columns: ["company_id"]
-            isOneToOne: false
-            referencedRelation: "master_client_company"
-            referencedColumns: ["company_id"]
-          },
-        ]
+        Relationships: []
       }
       rfq_card: {
         Row: {
@@ -1053,15 +1025,7 @@ export type Database = {
           rfq_id: number | null
           rfq_name: string | null
         }
-        Relationships: [
-          {
-            foreignKeyName: "requests_and_products_company_id_fkey"
-            columns: ["company_id"]
-            isOneToOne: false
-            referencedRelation: "master_client_company"
-            referencedColumns: ["company_id"]
-          },
-        ]
+        Relationships: []
       }
       rfq_card_supplier_price_status: {
         Row: {
@@ -1073,22 +1037,7 @@ export type Database = {
           supplier_id: number | null
           supplier_name: string | null
         }
-        Relationships: [
-          {
-            foreignKeyName: "requests_and_products_company_id_fkey"
-            columns: ["company_id"]
-            isOneToOne: false
-            referencedRelation: "master_client_company"
-            referencedColumns: ["company_id"]
-          },
-          {
-            foreignKeyName: "requests_and_products_supplier_id_fkey"
-            columns: ["supplier_id"]
-            isOneToOne: false
-            referencedRelation: "master_suppliers_company"
-            referencedColumns: ["supplier_id"]
-          },
-        ]
+        Relationships: []
       }
       unique_rfq_products: {
         Row: {
@@ -1099,15 +1048,7 @@ export type Database = {
           rfq_name: string | null
           units: number | null
         }
-        Relationships: [
-          {
-            foreignKeyName: "requests_and_products_company_id_fkey"
-            columns: ["company_id"]
-            isOneToOne: false
-            referencedRelation: "master_client_company"
-            referencedColumns: ["company_id"]
-          },
-        ]
+        Relationships: []
       }
       unique_rfq_suppliers: {
         Row: {
