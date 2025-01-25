@@ -1,7 +1,6 @@
 import { Header } from "@/components/Header";
 import { Footer } from "@/components/Footer";
 import { useNavigate } from "react-router-dom";
-import { Layout } from "@/components/layout/Layout";
 import { Button } from "@/components/ui/button";
 import { ArrowLeft } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
@@ -50,20 +49,22 @@ const Orders = () => {
 
       const { data: userData, error: userError } = await supabase
         .from("master_user")
-        .select("company_id")
+        .select("company_id, supplier_id, user_role")
         .eq("id", user.id)
         .single();
 
       if (userError) throw userError;
       if (!userData) throw new Error("No user data found");
 
+      // Different queries for client and supplier users
       const { data: poHeaders, error: poError } = await supabase
         .from("po_header")
         .select(`
           *,
           master_suppliers_company(supplier_name)
         `)
-        .eq("company_id", userData.company_id)
+        .eq(userData.user_role === 'Supplier' ? 'supplier_id' : 'company_id', 
+            userData.user_role === 'Supplier' ? userData.supplier_id : userData.company_id)
         .order("created_at", { ascending: false });
 
       if (poError) throw poError;
@@ -156,34 +157,34 @@ const Orders = () => {
                 <Accordion type="single" collapsible>
                   <AccordionItem value="products" className="border-none">
                     <div className="grid grid-cols-3 gap-4 mb-4">
-                        <div className="space-y-[2px] truncate text-left">
-                          <h2 className="font-bold text-lg text-primary truncate">{order.po_id}</h2>
-                          <p className="text-sm text-muted-foreground truncate">
-                            {format(new Date(order.created_at), "PPP", { locale: es })}
-                          </p>
-                          <p className="text-primary truncate">{order.supplier_name}</p>
-                        </div>
-                    
-                        <div className="space-y-1 truncate text-left">
-                          <p className="font-medium text-primary truncate">{order.delivery_method}</p>
-                          <p className="text-primary truncate">{order.location_name}</p>
-                          <p className="text-muted-foreground truncate">{order.address}</p>
-                          <p className="text-muted-foreground truncate">{`${order.zip_code} ${order.town}`}</p>
-                          <p className="text-muted-foreground truncate">{order.country}</p>
-                        </div>
-                      
-                        <div className="space-y-1 text-left">
-                          <p className="font-medium text-primary truncate">
-                            Total sin IVA: {order.total_amount_without_vat.toFixed(2)}€
-                          </p>
-                          <p className="text-muted-foreground truncate">
-                            Total con IVA: {(order.total_amount_without_vat * 1.21).toFixed(2)}€
-                          </p>
-                          <p className="text-primary truncate">
-                            Método de pago: {order.payment_method}
-                          </p>
-                        </div>
+                      <div className="space-y-[2px] truncate text-left">
+                        <h2 className="font-bold text-lg text-primary truncate">{order.po_id}</h2>
+                        <p className="text-sm text-muted-foreground truncate">
+                          {format(new Date(order.created_at), "PPP", { locale: es })}
+                        </p>
+                        <p className="text-primary truncate">{order.supplier_name}</p>
                       </div>
+
+                      <div className="space-y-1 truncate text-left">
+                        <p className="font-medium text-primary truncate">{order.delivery_method}</p>
+                        <p className="text-primary truncate">{order.location_name}</p>
+                        <p className="text-muted-foreground truncate">{order.address}</p>
+                        <p className="text-muted-foreground truncate">{`${order.zip_code} ${order.town}`}</p>
+                        <p className="text-muted-foreground truncate">{order.country}</p>
+                      </div>
+
+                      <div className="space-y-1 text-left">
+                        <p className="font-medium text-primary truncate">
+                          Total sin IVA: {order.total_amount_without_vat.toFixed(2)}€
+                        </p>
+                        <p className="text-muted-foreground truncate">
+                          Total con IVA: {(order.total_amount_without_vat * 1.21).toFixed(2)}€
+                        </p>
+                        <p className="text-primary truncate">
+                          Método de pago: {order.payment_method}
+                        </p>
+                      </div>
+                    </div>
                     <AccordionTrigger className="py-0 text-primary hover:text-secondary">
                       <div className="flex items-center gap-2">
                         <span>Productos</span>
@@ -225,4 +226,5 @@ const Orders = () => {
     </div>
   );
 };
+
 export default Orders;
