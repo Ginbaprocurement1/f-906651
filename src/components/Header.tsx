@@ -1,7 +1,7 @@
 import { Search, ShoppingCart, User, LogOut } from "lucide-react";
 import { Button } from "./ui/button";
 import { Input } from "./ui/input";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { CartSidebar } from "./CartSidebar";
 import { LeftSidebar } from "./LeftSidebar";
 import { useNavigate } from "react-router-dom";
@@ -13,8 +13,24 @@ export const Header = () => {
   const [isCartOpen, setIsCartOpen] = useState(false);
   const [isLeftSidebarOpen, setIsLeftSidebarOpen] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
+  const [userRole, setUserRole] = useState<string | null>(null);
   const { items } = useCartStore();
   const navigate = useNavigate();
+
+  useEffect(() => {
+    const fetchUserRole = async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (user) {
+        const { data: userData } = await supabase
+          .from('master_user')
+          .select('user_role')
+          .eq('id', user.id)
+          .single();
+        setUserRole(userData?.user_role || null);
+      }
+    };
+    fetchUserRole();
+  }, []);
 
   const handleSearch = (e?: React.FormEvent) => {
     e?.preventDefault();
@@ -76,25 +92,29 @@ export const Header = () => {
                 </Button>
               </form>
             </div>
-            <Button variant="secondary">Nuevo Proyecto</Button>
+            {userRole === 'Client' && (
+              <Button variant="secondary">Nuevo Proyecto</Button>
+            )}
           </div>
           <div className="flex items-center gap-4">
             <Button variant="ghost" className="text-white">
               <User className="mr-2" size={20} />
               Mi Cuenta
             </Button>
-            <Button 
-              variant="ghost" 
-              className="text-white relative"
-              onClick={() => setIsCartOpen(true)}
-            >
-              <ShoppingCart size={20} />
-              {uniqueProductCount > 0 && (
-                <span className="absolute -top-2 -right-2 bg-secondary text-white text-xs rounded-full w-5 h-5 flex items-center justify-center">
-                  {uniqueProductCount}
-                </span>
-              )}
-            </Button>
+            {userRole === 'Client' && (
+              <Button 
+                variant="ghost" 
+                className="text-white relative"
+                onClick={() => setIsCartOpen(true)}
+              >
+                <ShoppingCart size={20} />
+                {uniqueProductCount > 0 && (
+                  <span className="absolute -top-2 -right-2 bg-secondary text-white text-xs rounded-full w-5 h-5 flex items-center justify-center">
+                    {uniqueProductCount}
+                  </span>
+                )}
+              </Button>
+            )}
             <Button 
               variant="ghost" 
               className="text-white"
@@ -120,13 +140,23 @@ export const Header = () => {
               </Button>
             </li>
             <li>
-              <a href="/favoritos" className="text-primary hover:text-secondary">Favoritos</a>
+              <a 
+                href={userRole === 'Supplier' ? "/productos" : "/favoritos"} 
+                className="text-primary hover:text-secondary"
+              >
+                {userRole === 'Supplier' ? 'Catálogo' : 'Favoritos'}
+              </a>
             </li>
             <li>
               <a href="/pedidos" className="text-primary hover:text-secondary">Pedidos</a>
             </li>
             <li>
-              <a href="/proyectos" className="text-primary hover:text-secondary">Proyectos</a>
+              <a 
+                href={userRole === 'Supplier' ? "/stock" : "/proyectos"} 
+                className="text-primary hover:text-secondary"
+              >
+                {userRole === 'Supplier' ? 'Stock' : 'Proyectos'}
+              </a>
             </li>
             <li>
               <a href="/facturas" className="text-primary hover:text-secondary">Facturas</a>
@@ -138,8 +168,12 @@ export const Header = () => {
         </div>
       </nav>
 
-      <CartSidebar isOpen={isCartOpen} onClose={() => setIsCartOpen(false)} />
-      <LeftSidebar isOpen={isLeftSidebarOpen} onClose={() => setIsLeftSidebarOpen(false)} />
+      {userRole === 'Client' && (
+        <>
+          <CartSidebar isOpen={isCartOpen} onClose={() => setIsCartOpen(false)} />
+          <LeftSidebar isOpen={isLeftSidebarOpen} onClose={() => setIsLeftSidebarOpen(false)} />
+        </>
+      )}
     </header>
   );
 };

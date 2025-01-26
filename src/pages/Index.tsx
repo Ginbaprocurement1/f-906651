@@ -1,6 +1,8 @@
 import { Header } from "@/components/Header";
 import { Footer } from "@/components/Footer";
 import { CategoryGrid } from "@/components/CategoryGrid";
+import { useEffect, useState } from "react";
+import { supabase } from "@/integrations/supabase/client";
 
 const promotions = [
   {
@@ -21,48 +23,73 @@ const promotions = [
 ];
 
 const Index = () => {
+  const [userRole, setUserRole] = useState<string | null>(null);
+
+  useEffect(() => {
+    const fetchUserRole = async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (user) {
+        const { data: userData } = await supabase
+          .from('master_user')
+          .select('user_role')
+          .eq('id', user.id)
+          .single();
+        setUserRole(userData?.user_role || null);
+      }
+    };
+    fetchUserRole();
+  }, []);
+
   return (
     <div className="min-h-screen flex flex-col">
       <Header />
       <main className="flex-1 container mx-auto mt-32 mb-8">
-        <section className="mb-12">
-          <h1 className="text-3xl font-bold mb-8">Bienvenido a Nuestra Tienda</h1>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            {promotions.map((promo, index) => (
-              <div 
-                key={index}
-                className="bg-accent rounded-lg overflow-hidden hover:shadow-lg transition-shadow"
-              >
-                <img 
-                  src={promo.image} 
-                  alt={promo.title}
-                  className="w-full h-48 object-cover"
-                />
-                <div className="p-6">
-                  <h3 className="text-xl font-semibold mb-2">{promo.title}</h3>
-                  <p className="text-muted-foreground">{promo.description}</p>
+        {userRole === 'Client' ? (
+          <>
+            <section className="mb-12">
+              <h1 className="text-3xl font-bold mb-8">Bienvenido a Nuestra Tienda</h1>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                {promotions.map((promo, index) => (
+                  <div 
+                    key={index}
+                    className="bg-accent rounded-lg overflow-hidden hover:shadow-lg transition-shadow"
+                  >
+                    <img 
+                      src={promo.image} 
+                      alt={promo.title}
+                      className="w-full h-48 object-cover"
+                    />
+                    <div className="p-6">
+                      <h3 className="text-xl font-semibold mb-2">{promo.title}</h3>
+                      <p className="text-muted-foreground">{promo.description}</p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </section>
+
+            <section className="mb-12">
+              <h2 className="text-2xl font-semibold mb-6">Comprar por Categoría</h2>
+              <CategoryGrid />
+            </section>
+
+            <section>
+              <h2 className="text-2xl font-semibold mb-6">Recomendado para Ti</h2>
+              <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-6">
+                {/* Placeholder for product recommendations */}
+                <div className="bg-white p-4 rounded-lg shadow-sm">
+                  <div className="aspect-square bg-muted rounded-md mb-4"></div>
+                  <h3 className="font-medium">Nombre del Producto</h3>
+                  <p className="text-sm text-gray-600">Desde €XX.XX</p>
                 </div>
               </div>
-            ))}
+            </section>
+          </>
+        ) : (
+          <div className="flex items-center justify-center h-[60vh]">
+            <h1 className="text-3xl font-bold text-gray-400">Bienvenido al Panel de Proveedor</h1>
           </div>
-        </section>
-
-        <section className="mb-12">
-          <h2 className="text-2xl font-semibold mb-6">Comprar por Categoría</h2>
-          <CategoryGrid />
-        </section>
-
-        <section>
-          <h2 className="text-2xl font-semibold mb-6">Recomendado para Ti</h2>
-          <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-6">
-            {/* Placeholder for product recommendations */}
-            <div className="bg-white p-4 rounded-lg shadow-sm">
-              <div className="aspect-square bg-muted rounded-md mb-4"></div>
-              <h3 className="font-medium">Nombre del Producto</h3>
-              <p className="text-sm text-gray-600">Desde €XX.XX</p>
-            </div>
-          </div>
-        </section>
+        )}
       </main>
       <Footer />
     </div>
