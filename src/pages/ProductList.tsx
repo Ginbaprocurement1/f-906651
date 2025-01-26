@@ -28,12 +28,53 @@ const ProductList = () => {
   const [searchParams] = useSearchParams();
   const categoryFromUrl = searchParams.get('category');
   const searchFromUrl = searchParams.get('search');
+  const [userRole, setUserRole] = useState<string | null>(null);
+
+  useEffect(() => {
+    const fetchUserRole = async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (user) {
+        const { data: userData } = await supabase
+          .from('master_user')
+          .select('user_role, supplier_id')
+          .eq('id', user.id)
+          .single();
+        setUserRole(userData?.user_role || null);
+      }
+    };
+    fetchUserRole();
+  }, []);
 
   useEffect(() => {
     const fetchProducts = async () => {
-      const { data, error } = await supabase
-        .from('master_product')
-        .select('*');
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) {
+        setIsLoading(false);
+        return;
+      }
+
+      const { data: userData } = await supabase
+        .from('master_user')
+        .select('user_role, supplier_id')
+        .eq('id', user.id)
+        .single();
+
+      let query = supabase.from('master_product').select('*');
+
+      // If user is a supplier, only show their products
+      if (userData?.user_role === 'Supplier') {
+        const { data: supplierData } = await supabase
+          .from('master_suppliers_company')
+          .select('supplier_name')
+          .eq('supplier_id', userData.supplier_id)
+          .single();
+
+        if (supplierData) {
+          query = query.eq('supplier_name', supplierData.supplier_name);
+        }
+      }
+
+      const { data, error } = await query;
 
       if (error) {
         console.error('Error fetching products:', error);
@@ -49,14 +90,12 @@ const ProductList = () => {
         setProducts(data);
         let filtered = data;
 
-        // Handle category filter
         if (categoryFromUrl) {
           filtered = filtered.filter(product => 
             product.product_category_l1 === categoryFromUrl
           );
         }
 
-        // Handle search filter
         if (searchFromUrl) {
           const keywords = searchFromUrl.toLowerCase().split(/[\s-]+/);
           filtered = filtered.filter(product => {
@@ -135,10 +174,12 @@ const ProductList = () => {
       <main className="flex-1 container mx-auto mt-32 mb-8">
         <div className="mb-8">
           <h1 className="text-3xl font-bold">
-            {searchFromUrl ? "Product Search" : (categoryFromUrl || "Our Products")}
+            {searchFromUrl ? "Product Search" : (categoryFromUrl || (userRole === 'Supplier' ? "My Products" : "Our Products"))}
           </h1>
           <p className="text-muted-foreground mt-2">
-            Browse through our extensive collection of construction materials
+            {userRole === 'Supplier' 
+              ? "Manage your product catalog"
+              : "Browse through our extensive collection of construction materials"}
           </p>
         </div>
 

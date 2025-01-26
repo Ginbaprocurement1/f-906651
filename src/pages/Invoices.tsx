@@ -11,18 +11,8 @@ import {
 } from "@/components/ui/select";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
-import {
-  LineChart,
-  Line,
-  XAxis,
-  YAxis,
-  CartesianGrid,
-  Tooltip,
-  ResponsiveContainer,
-} from "recharts";
 import { useNavigate } from "react-router-dom";
 import { format } from "date-fns";
-import { es } from "date-fns/locale";
 import { DatePickerWithRange } from "@/components/ui/date-range-picker";
 import { DateRange } from "react-day-picker";
 import { Header } from "@/components/Header";
@@ -50,6 +40,7 @@ interface Invoice {
   invoice_due_date: string;
   status: string;
   supplier_name: string;
+  company_name: string;
   total_amount: number;
   pdf_url: string | null;
 }
@@ -64,22 +55,63 @@ const Invoices = () => {
   const [suppliers, setSuppliers] = useState<string[]>([]);
   const [selectedInvoiceId, setSelectedInvoiceId] = useState<string | null>(null);
   const [showConfirmDialog, setShowConfirmDialog] = useState(false);
+  const [userRole, setUserRole] = useState<string | null>(null);
   const { toast } = useToast();
+
+  useEffect(() => {
+    const fetchUserRole = async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (user) {
+        const { data: userData } = await supabase
+          .from('master_user')
+          .select('user_role')
+          .eq('id', user.id)
+          .single();
+        setUserRole(userData?.user_role || null);
+      }
+    };
+    fetchUserRole();
+  }, []);
 
   useEffect(() => {
     fetchInvoices();
     fetchSuppliers();
-  }, []);
+  }, [userRole]);
 
   const fetchInvoices = async () => {
     try {
-      const { data, error } = await supabase
-        .from("invoice_totals")
-        .select("*")
-        .order("invoice_date", { ascending: false });
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
+
+      const { data: userData } = await supabase
+        .from('master_user')
+        .select('user_role, supplier_id, company_id')
+        .eq('id', user.id)
+        .single();
+
+      let query = supabase
+        .from('invoice_header')
+        .select(`
+          *,
+          master_client_company!inner(company_name)
+        `);
+
+      if (userData?.user_role === 'Supplier') {
+        query = query.eq('supplier_id', userData.supplier_id);
+      } else {
+        query = query.eq('company_id', userData.company_id);
+      }
+
+      const { data, error } = await query;
 
       if (error) throw error;
-      setInvoices(data || []);
+
+      const formattedData = data.map(invoice => ({
+        ...invoice,
+        company_name: invoice.master_client_company.company_name
+      }));
+
+      setInvoices(formattedData || []);
     } catch (error) {
       console.error("Error fetching invoices:", error);
       toast({
@@ -156,12 +188,13 @@ const Invoices = () => {
   };
 
   const filteredInvoices = invoices.filter((invoice) => {
-    const matchesSearch =
-      invoice.invoice_id.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      invoice.supplier_name.toLowerCase().includes(searchTerm.toLowerCase());
+    const searchField = userRole === 'Supplier' 
+      ? invoice.company_name 
+      : invoice.supplier_name;
+    
+    const matchesSearch = searchField.toLowerCase().includes(searchTerm.toLowerCase());
     const matchesStatus = filterStatus === "all" || invoice.status === filterStatus;
-    const matchesSupplier =
-      filterSupplier === "all" || invoice.supplier_name === filterSupplier;
+    const matchesSupplier = filterSupplier === "all" || invoice.supplier_name === filterSupplier;
     
     const matchesDate = !filterDate?.from || !filterDate?.to || (
       new Date(invoice.invoice_date) >= filterDate.from &&
@@ -170,20 +203,6 @@ const Invoices = () => {
 
     return matchesSearch && matchesStatus && matchesDate && matchesSupplier;
   });
-
-  const chartData = invoices
-    .filter((invoice) => invoice.status !== "Pagada")
-    .reduce((acc: any[], invoice) => {
-      const date = new Date(invoice.invoice_due_date).toLocaleDateString();
-      const existingDate = acc.find((item) => item.date === date);
-      if (existingDate) {
-        existingDate.amount += invoice.total_amount;
-      } else {
-        acc.push({ date, amount: invoice.total_amount });
-      }
-      return acc;
-    }, [])
-    .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
 
   return (
     <div className="min-h-screen flex flex-col">
@@ -269,7 +288,9 @@ const Invoices = () => {
                     <th className="text-left py-3 px-4">Nº Factura</th>
                     <th className="text-left py-3 px-4">Fecha emisión</th>
                     <th className="text-left py-3 px-4">Fecha vencimiento</th>
-                    <th className="text-left py-3 px-4">Proveedor</th>
+                    <th className="text-left py-3 px-4">
+                      {userRole === 'Supplier' ? 'Cliente' : 'Proveedor'}
+                    </th>
                     <th className="text-left py-3 px-4">Importe (con IVA)</th>
                     <th className="text-left py-3 px-4">Estado</th>
                     <th className="text-right py-3 px-4">Acciones</th>
@@ -285,7 +306,9 @@ const Invoices = () => {
                       <td className="py-3 px-4">
                         {format(new Date(invoice.invoice_due_date), "dd/MM/yyyy")}
                       </td>
-                      <td className="py-3 px-4">{invoice.supplier_name}</td>
+                      <td className="py-3 px-4">
+                        {userRole === 'Supplier' ? invoice.company_name : invoice.supplier_name}
+                      </td>
                       <td className="py-3 px-4">
                         {invoice.total_amount.toLocaleString("es-ES", {
                           style: "currency",
@@ -309,14 +332,16 @@ const Invoices = () => {
                             </Button>
                           </DropdownMenuTrigger>
                           <DropdownMenuContent align="end">
-                            <DropdownMenuItem
-                              onClick={() => {
-                                setSelectedInvoiceId(invoice.invoice_id);
-                                setShowConfirmDialog(true);
-                              }}
-                            >
-                              Marcar "factura pagada"
-                            </DropdownMenuItem>
+                            {userRole !== 'Supplier' && (
+                              <DropdownMenuItem
+                                onClick={() => {
+                                  setSelectedInvoiceId(invoice.invoice_id);
+                                  setShowConfirmDialog(true);
+                                }}
+                              >
+                                Marcar "factura pagada"
+                              </DropdownMenuItem>
+                            )}
                             <DropdownMenuItem
                               onClick={() => handleDownloadInvoice(invoice.pdf_url)}
                             >
@@ -333,27 +358,29 @@ const Invoices = () => {
           </div>
         </div>
 
-        <div className="bg-white rounded-lg shadow-md p-6">
-          <h2 className="text-xl font-semibold mb-4">
-            Importe pendiente por fecha de vencimiento
-          </h2>
-          <div className="h-[400px]">
-            <ResponsiveContainer width="100%" height="100%">
-              <LineChart data={chartData}>
-                <CartesianGrid strokeDasharray="3 3" />
-                <XAxis dataKey="date" />
-                <YAxis />
-                <Tooltip />
-                <Line
-                  type="monotone"
-                  dataKey="amount"
-                  stroke="#0EA5E9"
-                  strokeWidth={2}
-                />
-              </LineChart>
-            </ResponsiveContainer>
+        {userRole !== 'Supplier' && (
+          <div className="bg-white rounded-lg shadow-md p-6 mt-8">
+            <h2 className="text-xl font-semibold mb-4">
+              Importe pendiente por fecha de vencimiento
+            </h2>
+            <div className="h-[400px]">
+              <ResponsiveContainer width="100%" height="100%">
+                <LineChart data={chartData}>
+                  <CartesianGrid strokeDasharray="3 3" />
+                  <XAxis dataKey="date" />
+                  <YAxis />
+                  <Tooltip />
+                  <Line
+                    type="monotone"
+                    dataKey="amount"
+                    stroke="#0EA5E9"
+                    strokeWidth={2}
+                  />
+                </LineChart>
+              </ResponsiveContainer>
+            </div>
           </div>
-        </div>
+        )}
       </main>
       <Footer />
 
