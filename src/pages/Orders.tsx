@@ -25,8 +25,8 @@ interface OrderProduct {
 
 interface Order {
   po_id: string;
-  supplier_name?: string;
-  company_name?: string;
+  supplier_name: string;
+  company_name: string;
   created_at: string;
   delivery_method: string;
   location_name: string;
@@ -57,7 +57,6 @@ const Orders = () => {
       if (userError) throw userError;
       if (!userData) throw new Error("No user data found");
 
-      // Different queries for client and supplier users
       const { data: poHeaders, error: poError } = await supabase
         .from("po_header")
         .select(`
