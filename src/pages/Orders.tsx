@@ -118,7 +118,11 @@ const Orders = () => {
         })
       );
 
-      return ordersWithDetails.filter((order): order is Order => order !== null);
+      return ordersWithDetails.filter((order): order is Order => 
+        order !== null && 
+        typeof order.supplier_name === 'string' && 
+        typeof order.company_name === 'string'
+      );
     }
   });
 
