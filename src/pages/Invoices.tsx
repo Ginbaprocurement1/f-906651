@@ -33,6 +33,15 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
+import {
+  ResponsiveContainer,
+  LineChart,
+  Line,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+} from "recharts";
 
 interface Invoice {
   invoice_id: string;
@@ -43,6 +52,11 @@ interface Invoice {
   company_name: string;
   total_amount: number;
   pdf_url: string | null;
+}
+
+interface ChartData {
+  date: string;
+  amount: number;
 }
 
 const Invoices = () => {
@@ -56,6 +70,7 @@ const Invoices = () => {
   const [selectedInvoiceId, setSelectedInvoiceId] = useState<string | null>(null);
   const [showConfirmDialog, setShowConfirmDialog] = useState(false);
   const [userRole, setUserRole] = useState<string | null>(null);
+  const [chartData, setChartData] = useState<ChartData[]>([]);
   const { toast } = useToast();
 
   useEffect(() => {
@@ -90,11 +105,8 @@ const Invoices = () => {
         .single();
 
       let query = supabase
-        .from('invoice_header')
-        .select(`
-          *,
-          master_client_company!inner(company_name)
-        `);
+        .from('invoice_totals')
+        .select('*');
 
       if (userData?.user_role === 'Supplier') {
         query = query.eq('supplier_id', userData.supplier_id);
@@ -106,12 +118,16 @@ const Invoices = () => {
 
       if (error) throw error;
 
-      const formattedData = data.map(invoice => ({
-        ...invoice,
-        company_name: invoice.master_client_company.company_name
-      }));
+      setInvoices(data || []);
 
-      setInvoices(formattedData || []);
+      // Prepare chart data
+      if (userData?.user_role !== 'Supplier' && data) {
+        const chartData = data.map(invoice => ({
+          date: format(new Date(invoice.invoice_due_date), "dd/MM/yyyy"),
+          amount: Number(invoice.total_amount)
+        }));
+        setChartData(chartData);
+      }
     } catch (error) {
       console.error("Error fetching invoices:", error);
       toast({
