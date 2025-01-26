@@ -43,14 +43,6 @@ import {
   Tooltip,
 } from "recharts";
 
-interface Product {
-  product_name: string;
-  quantity: number;
-  price_without_vat: number;
-  price_with_vat: number;
-  product_uom: string;
-}
-
 interface Invoice {
   invoice_id: string;
   invoice_date: string;
@@ -60,7 +52,6 @@ interface Invoice {
   company_name: string;
   total_amount: number;
   pdf_url: string | null;
-  products: Product[];
 }
 
 interface ChartData {
@@ -114,20 +105,10 @@ const Invoices = () => {
         .single();
 
       let query = supabase
-        .from('invoice_header')
+        .from('invoice_totals')
         .select(`
           *,
-          master_client_company:company_id(company_name),
-          master_suppliers_company:supplier_id(supplier_name),
-          invoice_line(
-            quantity,
-            price_without_vat,
-            price_with_vat,
-            master_product(
-              product_name,
-              product_uom
-            )
-          )
+          master_client_company:company_id(company_name)
         `);
 
       if (userData?.user_role === 'Supplier') {
@@ -140,32 +121,18 @@ const Invoices = () => {
 
       if (error) throw error;
 
-      const formattedData: Invoice[] = data.map(invoice => ({
-        invoice_id: invoice.invoice_id,
-        invoice_date: invoice.invoice_date,
-        invoice_due_date: invoice.invoice_due_date,
-        status: invoice.status,
-        supplier_name: invoice.master_suppliers_company?.supplier_name || 'N/A',
-        company_name: invoice.master_client_company?.company_name || 'N/A',
-        total_amount: invoice.invoice_line.reduce((sum: number, line: any) => 
-          sum + (line.quantity * line.price_with_vat), 0),
-        pdf_url: invoice.pdf_url,
-        products: invoice.invoice_line.map((line: any) => ({
-          product_name: line.master_product?.product_name || 'Unknown Product',
-          quantity: line.quantity,
-          price_without_vat: line.price_without_vat,
-          price_with_vat: line.price_with_vat,
-          product_uom: line.master_product?.product_uom || 'unit'
-        }))
+      const formattedData = data.map(invoice => ({
+        ...invoice,
+        company_name: invoice.master_client_company?.company_name || 'N/A'
       }));
 
-      setInvoices(formattedData);
+      setInvoices(formattedData || []);
 
       // Prepare chart data
       if (userData?.user_role !== 'Supplier' && data) {
-        const chartData = formattedData.map(invoice => ({
+        const chartData = data.map(invoice => ({
           date: format(new Date(invoice.invoice_due_date), "dd/MM/yyyy"),
-          amount: invoice.total_amount
+          amount: Number(invoice.total_amount)
         }));
         setChartData(chartData);
       }
