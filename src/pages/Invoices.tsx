@@ -106,7 +106,10 @@ const Invoices = () => {
 
       let query = supabase
         .from('invoice_totals')
-        .select('*');
+        .select(`
+          *,
+          master_client_company:company_id(company_name)
+        `);
 
       if (userData?.user_role === 'Supplier') {
         query = query.eq('supplier_id', userData.supplier_id);
@@ -118,7 +121,12 @@ const Invoices = () => {
 
       if (error) throw error;
 
-      setInvoices(data || []);
+      const formattedData = data.map(invoice => ({
+        ...invoice,
+        company_name: invoice.master_client_company?.company_name || 'N/A'
+      }));
+
+      setInvoices(formattedData || []);
 
       // Prepare chart data
       if (userData?.user_role !== 'Supplier' && data) {
