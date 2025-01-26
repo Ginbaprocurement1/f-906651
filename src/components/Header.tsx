@@ -168,12 +168,8 @@ export const Header = () => {
         </div>
       </nav>
 
-      {userRole === 'Client' && (
-        <>
-          <CartSidebar isOpen={isCartOpen} onClose={() => setIsCartOpen(false)} />
-          <LeftSidebar isOpen={isLeftSidebarOpen} onClose={() => setIsLeftSidebarOpen(false)} />
-        </>
-      )}
+      <CartSidebar isOpen={isCartOpen} onClose={() => setIsCartOpen(false)} />
+      <LeftSidebar isOpen={isLeftSidebarOpen} onClose={() => setIsLeftSidebarOpen(false)} />
     </header>
   );
 };

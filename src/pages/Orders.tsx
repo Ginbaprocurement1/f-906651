@@ -25,7 +25,8 @@ interface OrderProduct {
 
 interface Order {
   po_id: string;
-  supplier_name: string;
+  supplier_name?: string;
+  company_name?: string;
   created_at: string;
   delivery_method: string;
   location_name: string;
@@ -61,7 +62,8 @@ const Orders = () => {
         .from("po_header")
         .select(`
           *,
-          master_suppliers_company(supplier_name)
+          master_suppliers_company(supplier_name),
+          master_client_company(company_name)
         `)
         .eq(userData.user_role === 'Supplier' ? 'supplier_id' : 'company_id', 
             userData.user_role === 'Supplier' ? userData.supplier_id : userData.company_id)
@@ -102,6 +104,7 @@ const Orders = () => {
           return {
             po_id: po.po_id,
             supplier_name: po.master_suppliers_company?.supplier_name || "Unknown Supplier",
+            company_name: po.master_client_company?.company_name || "Unknown Client",
             created_at: po.created_at,
             delivery_method: po.delivery_method,
             location_name: po.location_name,
@@ -117,6 +120,23 @@ const Orders = () => {
       );
 
       return ordersWithDetails.filter((order): order is Order => order !== null);
+    }
+  });
+
+  const { data: userData } = useQuery({
+    queryKey: ["user-role"],
+    queryFn: async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return null;
+
+      const { data, error } = await supabase
+        .from("master_user")
+        .select("user_role")
+        .eq("id", user.id)
+        .single();
+
+      if (error) throw error;
+      return data;
     }
   });
 
@@ -162,7 +182,9 @@ const Orders = () => {
                         <p className="text-sm text-muted-foreground truncate">
                           {format(new Date(order.created_at), "PPP", { locale: es })}
                         </p>
-                        <p className="text-primary truncate">{order.supplier_name}</p>
+                        <p className="text-primary truncate">
+                          {userData?.user_role === 'Supplier' ? order.company_name : order.supplier_name}
+                        </p>
                       </div>
 
                       <div className="space-y-1 truncate text-left">
@@ -193,7 +215,7 @@ const Orders = () => {
                     <AccordionContent className="bg-gray-200">
                       <div className="mt-4 space-y-4 w-3/4">
                         <div className="grid grid-cols-3 gap-4 font-medium text-primary text-left">
-                          <div></div>
+                          <div>Producto</div>
                           <div>Cantidad</div>
                           <div>Precio sin IVA</div>
                         </div>
