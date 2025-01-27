@@ -29,7 +29,7 @@ const ProductDetail = () => {
       const { data, error } = await supabase
         .from("master_product")
         .select("*")
-        .eq("product_id", productId)
+        .eq("product_id", parseInt(productId as string))
         .single();
 
       if (error) throw error;
@@ -43,7 +43,7 @@ const ProductDetail = () => {
       const { data, error } = await supabase
         .from("product_reviews")
         .select("*")
-        .eq("product_id", productId)
+        .eq("product_id", parseInt(productId as string))
         .order("created_at", { ascending: false });
 
       if (error) throw error;
