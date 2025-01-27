@@ -4,6 +4,7 @@ import { toast } from "@/components/ui/use-toast";
 import { useState, useEffect, useRef } from "react";
 import { Input } from "@/components/ui/input";
 import { useCartStore } from "@/stores/useCartStore";
+import { useNavigate } from "react-router-dom";
 
 interface Product {
   product_id: number;
@@ -26,6 +27,7 @@ export const ProductCard = ({ product }: ProductCardProps) => {
   const [buttonRef, setButtonRef] = useState<HTMLButtonElement | null>(null);
   const dialogRef = useRef<HTMLDivElement | null>(null);
   const { addToCart } = useCartStore();
+  const navigate = useNavigate();
 
   const handleQuantityChange = (value: string) => {
     const num = parseInt(value);
@@ -72,8 +74,22 @@ export const ProductCard = ({ product }: ProductCardProps) => {
     };
   }, [buttonRef]);
 
+  const handleProductClick = (event: React.MouseEvent) => {
+    // Don't navigate if clicking on the add to cart button or quantity dialog
+    if (
+      buttonRef?.contains(event.target as Node) ||
+      dialogRef.current?.contains(event.target as Node)
+    ) {
+      return;
+    }
+    navigate(`/productos/${product.product_id}`);
+  };
+
   return (
-    <div className="bg-white rounded-lg shadow-md overflow-hidden hover:shadow-lg transition-shadow duration-300 flex flex-col relative">
+    <div 
+      className="bg-white rounded-lg shadow-md overflow-hidden hover:shadow-lg transition-shadow duration-300 flex flex-col relative cursor-pointer" 
+      onClick={handleProductClick}
+    >
       <div className="relative aspect-square bg-muted">
         <img
           src={product.product_image_url || "/placeholder.svg"}
@@ -82,15 +98,12 @@ export const ProductCard = ({ product }: ProductCardProps) => {
         />
       </div>
       <div className="p-4 flex flex-col flex-grow">
-        <h3 className="font-bold text-lg mb-2 line-clamp-2 hover:text-secondary transition-colors">
+        <h3 className="font-bold text-lg mb-2 line-clamp-2 hover:text-secondary">
           {product.product_name}
         </h3>
         <div className="space-y-1 flex-grow">
           <p className="text-sm text-muted-foreground line-clamp-1">
             <span className="font-medium">Manufacturer:</span> {product.manufacturer || "N/A"}
-          </p>
-          <p className="text-sm text-muted-foreground line-clamp-1">
-            <span className="font-medium">Supplier:</span> {product.supplier_name || "N/A"}
           </p>
           <p className="text-lg font-semibold mt-2 text-secondary">
             {product.price_without_vat?.toFixed(2)} € / {product.product_uom || "unit"}

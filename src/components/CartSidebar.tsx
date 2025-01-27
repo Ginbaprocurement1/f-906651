@@ -76,11 +76,22 @@ export const CartSidebar = ({ isOpen, onClose }: CartSidebarProps) => {
                 <img
                   src={item.product_image_url || "/placeholder.svg"}
                   alt={item.product_name}
-                  className="w-20 h-20 object-cover"
+                  className="w-20 h-20 object-cover cursor-pointer"
+                  onClick={() => {
+                    onClose();
+                    navigate(`/productos/${item.product_id}`);
+                  }}
                 />
                 <div className="flex-1">
-                  <h3 className="text-sm font-medium">{item.product_name}</h3>
-                  <p className="text-sm text-gray-500">{item.supplier_name}</p>
+                  <h3 
+                    className="text-sm font-medium cursor-pointer hover:text-primary"
+                    onClick={() => {
+                      onClose();
+                      navigate(`/productos/${item.product_id}`);
+                    }}
+                  >
+                    {item.product_name}
+                  </h3>
                   <div className="mt-2 flex items-center gap-2">
                     <Button 
                       variant="outline" 

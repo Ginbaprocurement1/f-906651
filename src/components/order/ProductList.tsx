@@ -7,6 +7,7 @@ import {
   AccordionItem,
   AccordionTrigger,
 } from "@/components/ui/accordion";
+import { useNavigate } from "react-router-dom";
 
 interface ProductListProps {
   items: CartItem[];
@@ -15,6 +16,8 @@ interface ProductListProps {
 }
 
 export const ProductList = ({ items, onUpdateQuantity, onRemoveItem }: ProductListProps) => {
+  const navigate = useNavigate();
+  
   return (
     <Accordion type="single" collapsible>
       <AccordionItem value="products">
@@ -30,43 +33,55 @@ export const ProductList = ({ items, onUpdateQuantity, onRemoveItem }: ProductLi
                     <img 
                       src={item.product_image_url} 
                       alt={item.product_name} 
-                      className="w-20 h-20 object-cover rounded"
+                      className="w-20 h-20 object-cover rounded cursor-pointer"
+                      onClick={() => navigate(`/productos/${item.product_id}`)}
                     />
                   )}
                   <div>
-                    <p className="font-bold">{item.product_name}</p>
-                    <p className="text-sm text-gray-500">Ref: {item.ref_supplier}</p>
-                    <p className="font-bold mt-1">
-                      {item.price_without_vat?.toFixed(2)} €/{item.product_uom} sin IVA
+                    <p 
+                      className="font-bold cursor-pointer hover:text-primary"
+                      onClick={() => navigate(`/productos/${item.product_id}`)}
+                    >
+                      {item.product_name}
                     </p>
+                    <p className="text-sm text-gray-500">{item.supplier_name}</p>
+                    <div className="mt-2 flex items-center gap-2">
+                      <Button 
+                        variant="outline" 
+                        size="icon" 
+                        className="h-8 w-8"
+                        onClick={() => onUpdateQuantity(item.id, Math.max(1, item.quantity - 1))}
+                      >
+                        -
+                      </Button>
+                      <span className="w-8 text-center">{item.quantity}</span>
+                      <Button 
+                        variant="outline" 
+                        size="icon" 
+                        className="h-8 w-8"
+                        onClick={() => onUpdateQuantity(item.id, item.quantity + 1)}
+                      >
+                        +
+                      </Button>
+                    </div>
+                    <div className="mt-2">
+                      <p className="text-sm font-semibold">
+                        {item.price_without_vat}€ sin IVA
+                      </p>
+                      <p className="text-xs text-gray-500">
+                        {item.price_with_vat}€ con IVA
+                      </p>
+                    </div>
                   </div>
                 </div>
-                <div className="flex items-center gap-4">
-                  <div className="flex items-center gap-2">
-                    <Button
-                      variant="outline"
-                      size="icon"
-                      onClick={() => onUpdateQuantity(item.id, Math.max(1, item.quantity - 1))}
-                    >
-                      -
-                    </Button>
-                    <span className="w-8 text-center">{item.quantity}</span>
-                    <Button
-                      variant="outline"
-                      size="icon"
-                      onClick={() => onUpdateQuantity(item.id, item.quantity + 1)}
-                    >
-                      +
-                    </Button>
-                  </div>
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    onClick={() => onRemoveItem(item.id)}
-                  >
-                    <Trash2 className="h-4 w-4" />
-                  </Button>
-                </div>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="absolute right-0 top-1/2 -translate-y-1/2"
+                  onClick={() => onRemoveItem(item.id)}
+                >
+                  <Trash2 className="h-5 w-5 text-red-500" />
+                </Button>
               </div>
             ))}
           </div>

@@ -14,6 +14,7 @@ import Projects from "./pages/Projects";
 import Invoices from "./pages/Invoices";
 import Login from "./pages/Login";
 import ProductList from "./pages/ProductList";
+import ProductDetail from "./pages/ProductDetail";
 
 const queryClient = new QueryClient();
 
@@ -64,6 +65,14 @@ const App = () => (
             element={
               <ProtectedRoute>
                 <ProductList />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/productos/:productId"
+            element={
+              <ProtectedRoute>
+                <ProductDetail />
               </ProtectedRoute>
             }
           />
