@@ -403,6 +403,7 @@ export type Database = {
           created_at: string
           delivery_days: number | null
           manufacturer: string | null
+          manufacturer_logo: string | null
           price_with_vat: number | null
           price_without_vat: number | null
           product_category_l1: string | null
@@ -421,6 +422,7 @@ export type Database = {
           created_at?: string
           delivery_days?: number | null
           manufacturer?: string | null
+          manufacturer_logo?: string | null
           price_with_vat?: number | null
           price_without_vat?: number | null
           product_category_l1?: string | null
@@ -439,6 +441,7 @@ export type Database = {
           created_at?: string
           delivery_days?: number | null
           manufacturer?: string | null
+          manufacturer_logo?: string | null
           price_with_vat?: number | null
           price_without_vat?: number | null
           product_category_l1?: string | null
