@@ -36,6 +36,70 @@ const ProductList = () => {
   const [showProductForm, setShowProductForm] = useState(false);
   const navigate = useNavigate();
 
+  // Function to fetch products
+  const fetchProducts = async () => {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) {
+      setIsLoading(false);
+      return;
+    }
+
+    const { data: userData } = await supabase
+      .from('master_user')
+      .select('user_role, supplier_id')
+      .eq('id', user.id)
+      .single();
+
+    let query = supabase.from('master_product').select('*');
+
+    // If user is a supplier, only show their products
+    if (userData?.user_role === 'Supplier') {
+      const { data: supplierData } = await supabase
+        .from('master_suppliers_company')
+        .select('supplier_name')
+        .eq('supplier_id', userData.supplier_id)
+        .single();
+
+      if (supplierData) {
+        query = query.eq('supplier_name', supplierData.supplier_name);
+      }
+    }
+
+    const { data, error } = await query;
+
+    if (error) {
+      console.error('Error fetching products:', error);
+      toast({
+        variant: "destructive",
+        title: "Error",
+        description: "Could not load products. Please try again later.",
+      });
+      return;
+    }
+
+    if (data) {
+      setProducts(data);
+      let filtered = data;
+
+      if (categoryFromUrl) {
+        filtered = filtered.filter(product => 
+          product.product_category_l1 === categoryFromUrl
+        );
+      }
+
+      if (searchFromUrl) {
+        const keywords = searchFromUrl.toLowerCase().split(/[\s-]+/);
+        filtered = filtered.filter(product => {
+          const searchText = `${product.product_name} ${product.product_description}`.toLowerCase();
+          return keywords.every(keyword => searchText.includes(keyword));
+        });
+      }
+
+      setFilteredProducts(filtered);
+    }
+    setIsLoading(false);
+  };
+
   useEffect(() => {
     const fetchUserRole = async () => {
       const { data: { user } } = await supabase.auth.getUser();
@@ -45,77 +109,24 @@ const ProductList = () => {
           .select('user_role, supplier_id')
           .eq('id', user.id)
           .single();
+
         setUserRole(userData?.user_role || null);
-        setSupplierName(userData?.supplier_id ? userData.supplier_id : null);
+
+        if (userData?.supplier_id) {
+          const { data: supplierData } = await supabase
+            .from('master_suppliers_company')
+            .select('supplier_name')
+            .eq('supplier_id', userData.supplier_id)
+            .single();
+          
+          setSupplierName(supplierData?.supplier_name || null);
+        }
       }
     };
     fetchUserRole();
   }, []);
 
   useEffect(() => {
-    const fetchProducts = async () => {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) {
-        setIsLoading(false);
-        return;
-      }
-
-      const { data: userData } = await supabase
-        .from('master_user')
-        .select('user_role, supplier_id')
-        .eq('id', user.id)
-        .single();
-
-      let query = supabase.from('master_product').select('*');
-
-      // If user is a supplier, only show their products
-      if (userData?.user_role === 'Supplier') {
-        const { data: supplierData } = await supabase
-          .from('master_suppliers_company')
-          .select('supplier_name')
-          .eq('supplier_id', userData.supplier_id)
-          .single();
-
-        if (supplierData) {
-          query = query.eq('supplier_name', supplierData.supplier_name);
-        }
-      }
-
-      const { data, error } = await query;
-
-      if (error) {
-        console.error('Error fetching products:', error);
-        toast({
-          variant: "destructive",
-          title: "Error",
-          description: "Could not load products. Please try again later.",
-        });
-        return;
-      }
-
-      if (data) {
-        setProducts(data);
-        let filtered = data;
-
-        if (categoryFromUrl) {
-          filtered = filtered.filter(product => 
-            product.product_category_l1 === categoryFromUrl
-          );
-        }
-
-        if (searchFromUrl) {
-          const keywords = searchFromUrl.toLowerCase().split(/[\s-]+/);
-          filtered = filtered.filter(product => {
-            const searchText = `${product.product_name} ${product.product_description}`.toLowerCase();
-            return keywords.every(keyword => searchText.includes(keyword));
-          });
-        }
-
-        setFilteredProducts(filtered);
-      }
-      setIsLoading(false);
-    };
-
     fetchProducts();
   }, [categoryFromUrl, searchFromUrl]);
 
@@ -225,10 +236,7 @@ const ProductList = () => {
           open={showProductForm}
           onOpenChange={setShowProductForm}
           supplierName={supplierName}
-          onSuccess={() => {
-            // Refresh products after successful creation
-            fetchProducts();
-          }}
+          onSuccess={fetchProducts}
         />
       )}
     </div>
