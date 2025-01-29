@@ -10,6 +10,7 @@ import { Button } from "@/components/ui/button";
 import { ArrowLeft, Plus, Upload } from "lucide-react";
 import { ProductFormDialog } from "@/components/product/ProductFormDialog";
 import { ImportCatalogDialog } from "@/components/product/ImportCatalogDialog";
+import { Product } from "@/types/product";
 
 const ProductList = () => {
   const [products, setProducts] = useState<Product[]>([]);
@@ -23,6 +24,7 @@ const ProductList = () => {
   const [showProductForm, setShowProductForm] = useState(false);
   const [showImportDialog, setShowImportDialog] = useState(false);
   const [productToEdit, setProductToEdit] = useState<Product | null>(null);
+  const navigate = useNavigate();
 
   const fetchProducts = async () => {
     const { data: { user } } = await supabase.auth.getUser();
@@ -117,6 +119,26 @@ const ProductList = () => {
     fetchProducts();
   }, [categoryFromUrl, searchFromUrl]);
 
+  const handleFilterChange = (filters: any) => {
+    let filtered = products;
+    
+    if (filters.categories?.length > 0) {
+      filtered = filtered.filter(product => 
+        filters.categories.includes(product.product_category_l1)
+      );
+    }
+
+    if (filters.search) {
+      const keywords = filters.search.toLowerCase().split(/[\s-]+/);
+      filtered = filtered.filter(product => {
+        const searchText = `${product.product_name} ${product.product_description}`.toLowerCase();
+        return keywords.every(keyword => searchText.includes(keyword));
+      });
+    }
+
+    setFilteredProducts(filtered);
+  };
+
   const handleEditProduct = (product: Product) => {
     setProductToEdit(product);
     setShowProductForm(true);
@@ -167,7 +189,7 @@ const ProductList = () => {
             <ProductGrid 
               products={filteredProducts} 
               isLoading={isLoading}
-              userRole={userRole}
+              userRole={userRole || undefined}
               onEditProduct={handleEditProduct}
               onDeleteProduct={handleDeleteProduct}
             />

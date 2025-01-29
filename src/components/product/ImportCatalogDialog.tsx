@@ -5,6 +5,7 @@ import { useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
 import * as XLSX from 'xlsx';
+import { Product } from "@/types/product";
 
 interface ImportCatalogDialogProps {
   open: boolean;
@@ -58,9 +59,16 @@ export const ImportCatalogDialog = ({
         const jsonData = XLSX.utils.sheet_to_json(worksheet);
 
         for (const row of jsonData) {
-          const product = {
-            ...row,
+          const product: Partial<Product> & { supplier_name: string } = {
             supplier_name: supplierName,
+            product_name: (row as any).product_name,
+            product_description: (row as any).product_description,
+            product_uom: (row as any).product_uom,
+            product_category_l1: (row as any).product_category_l1,
+            price_without_vat: parseFloat((row as any).price_without_vat),
+            price_with_vat: parseFloat((row as any).price_with_vat),
+            ref_supplier: (row as any).ref_supplier,
+            manufacturer: (row as any).manufacturer,
           };
 
           const { data: existingProduct } = await supabase

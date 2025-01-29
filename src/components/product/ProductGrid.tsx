@@ -1,22 +1,21 @@
 import { ProductCard } from "./ProductCard";
+import { Product } from "@/types/product";
 
-interface Product {
-  product_id: number;
-  product_name: string;
-  product_image_url: string;
-  manufacturer: string;
-  supplier_name: string;
-  price_without_vat: number;
-  price_with_vat: number;
-  product_uom: string;
-}
-
-interface ProductGridProps {
+export interface ProductGridProps {
   products: Product[];
   isLoading: boolean;
+  userRole?: string;
+  onEditProduct?: (product: Product) => void;
+  onDeleteProduct?: (productId: number) => void;
 }
 
-export const ProductGrid = ({ products, isLoading }: ProductGridProps) => {
+export const ProductGrid = ({ 
+  products, 
+  isLoading,
+  userRole,
+  onEditProduct,
+  onDeleteProduct 
+}: ProductGridProps) => {
   if (isLoading) {
     return (
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -41,7 +40,13 @@ export const ProductGrid = ({ products, isLoading }: ProductGridProps) => {
   return (
     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
       {products.map((product) => (
-        <ProductCard key={product.product_id} product={product} />
+        <ProductCard 
+          key={product.product_id} 
+          product={product}
+          userRole={userRole}
+          onEdit={onEditProduct}
+          onDelete={onDeleteProduct}
+        />
       ))}
     </div>
   );
