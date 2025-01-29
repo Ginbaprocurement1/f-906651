@@ -237,8 +237,8 @@ const ProductList = () => {
               products={filteredProducts} 
               isLoading={isLoading}
               userRole={userRole}
-              onEdit={handleEdit}
-              onDelete={handleDelete}
+              onEditProduct={handleEdit}
+              onDeleteProduct={handleDelete}
             />
           </div>
         </div>
