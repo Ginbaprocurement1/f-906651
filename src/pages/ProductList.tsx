@@ -2,10 +2,13 @@ import { Header } from "@/components/Header";
 import { Footer } from "@/components/Footer";
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import { toast } from "@/components/ui/use-toast";
+import { toast } from "@/hooks/use-toast";
 import { ProductFilters } from "@/components/ProductFilters";
-import { useSearchParams } from "react-router-dom";
+import { useSearchParams, useNavigate } from "react-router-dom";
 import { ProductGrid } from "@/components/product/ProductGrid";
+import { Button } from "@/components/ui/button";
+import { ArrowLeft, Plus, Upload } from "lucide-react";
+import { ProductFormDialog } from "@/components/product/ProductFormDialog";
 
 interface Product {
   product_id: number;
@@ -29,6 +32,9 @@ const ProductList = () => {
   const categoryFromUrl = searchParams.get('category');
   const searchFromUrl = searchParams.get('search');
   const [userRole, setUserRole] = useState<string | null>(null);
+  const [supplierName, setSupplierName] = useState<string | null>(null);
+  const [showProductForm, setShowProductForm] = useState(false);
+  const navigate = useNavigate();
 
   useEffect(() => {
     const fetchUserRole = async () => {
@@ -40,6 +46,7 @@ const ProductList = () => {
           .eq('id', user.id)
           .single();
         setUserRole(userData?.user_role || null);
+        setSupplierName(userData?.supplier_id ? userData.supplier_id : null);
       }
     };
     fetchUserRole();
@@ -173,12 +180,30 @@ const ProductList = () => {
       <Header />
       <main className="flex-1 container mx-auto mt-32 mb-8">
         <div className="mb-8">
+          {userRole === 'Supplier' && (
+            <div className="flex justify-between items-center mb-4">
+              <div className="flex gap-4">
+                <Button onClick={() => setShowProductForm(true)}>
+                  <Plus className="h-4 w-4 mr-2" />
+                  Añadir nuevo producto
+                </Button>
+                <Button variant="outline">
+                  <Upload className="h-4 w-4 mr-2" />
+                  Importar catálogo desde plantilla
+                </Button>
+              </div>
+              <Button variant="ghost" onClick={() => navigate(-1)}>
+                <ArrowLeft className="h-4 w-4 mr-2" />
+                Volver
+              </Button>
+            </div>
+          )}
           <h1 className="text-3xl font-bold">
             {searchFromUrl ? "Búsqueda de productos" : (categoryFromUrl || (userRole === 'Supplier' ? "Mis Productos" : "Nuestros productos"))}
           </h1>
           <p className="text-muted-foreground mt-2">
             {userRole === 'Supplier' 
-              ? "Gestiona tu catálogo de products"
+              ? "Gestiona tu catálogo de productos"
               : "Browse through our extensive collection of construction materials"}
           </p>
         </div>
@@ -194,6 +219,18 @@ const ProductList = () => {
         </div>
       </main>
       <Footer />
+
+      {userRole === 'Supplier' && supplierName && (
+        <ProductFormDialog
+          open={showProductForm}
+          onOpenChange={setShowProductForm}
+          supplierName={supplierName}
+          onSuccess={() => {
+            // Refresh products after successful creation
+            fetchProducts();
+          }}
+        />
+      )}
     </div>
   );
 };
