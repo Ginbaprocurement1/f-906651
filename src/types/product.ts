@@ -5,7 +5,7 @@ export interface Product {
   product_uom?: string;
   product_category_l1?: string;
   product_image_url: string; // Changed from optional to required
-  manufacturer?: string;
+  manufacturer: string; // Changed from optional to required
   supplier_name?: string;
   price_without_vat: number;
   price_with_vat: number;
