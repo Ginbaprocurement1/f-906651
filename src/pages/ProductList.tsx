@@ -9,20 +9,8 @@ import { ProductGrid } from "@/components/product/ProductGrid";
 import { Button } from "@/components/ui/button";
 import { ArrowLeft, Plus, Upload } from "lucide-react";
 import { ProductFormDialog } from "@/components/product/ProductFormDialog";
-
-interface Product {
-  product_id: number;
-  product_name: string;
-  product_image_url: string;
-  manufacturer: string;
-  supplier_name: string;
-  price_without_vat: number;
-  price_with_vat: number;
-  product_uom: string;
-  product_category_l1: string;
-  stock_demand_category: string;
-  product_description: string;
-}
+import { ImportCatalogDialog } from "@/components/product/ImportCatalogDialog";
+import { Product } from "@/types/product";
 
 const ProductList = () => {
   const [products, setProducts] = useState<Product[]>([]);
@@ -36,6 +24,8 @@ const ProductList = () => {
   const [showProductForm, setShowProductForm] = useState(false);
   const [productToEdit, setProductToEdit] = useState<Product | null>(null);
   const navigate = useNavigate();
+
+  const [showImportDialog, setShowImportDialog] = useState(false);
 
   const fetchProducts = async () => {
     const { data: { user } } = await supabase.auth.getUser();
@@ -208,7 +198,7 @@ const ProductList = () => {
                 Volver
               </Button>
               <h1 className="text-3xl font-bold text-left">
-                {searchFromUrl ? "Búsqueda de productos" : (categoryFromUrl || (userRole === 'Supplier' ? "Mis Productos" : "Nuestros productos"))}
+                {searchFromUrl ? "Búsqueda de productos" : (categoryFromUrl || "Mis Productos")}
               </h1>
               <div className="flex gap-4">
                 <Button onClick={() => {
@@ -218,7 +208,7 @@ const ProductList = () => {
                   <Plus className="h-4 w-4 mr-2" />
                   Añadir nuevo producto
                 </Button>
-                <Button variant="outline">
+                <Button variant="outline" onClick={() => setShowImportDialog(true)}>
                   <Upload className="h-4 w-4 mr-2" />
                   Importar catálogo desde plantilla
                 </Button>
@@ -246,13 +236,21 @@ const ProductList = () => {
       <Footer />
 
       {userRole === 'Supplier' && supplierName && (
-        <ProductFormDialog
-          open={showProductForm}
-          onOpenChange={setShowProductForm}
-          supplierName={supplierName}
-          onSuccess={fetchProducts}
-          productToEdit={productToEdit}
-        />
+        <>
+          <ProductFormDialog
+            open={showProductForm}
+            onOpenChange={setShowProductForm}
+            supplierName={supplierName}
+            onSuccess={fetchProducts}
+            productToEdit={productToEdit}
+          />
+          <ImportCatalogDialog
+            open={showImportDialog}
+            onOpenChange={setShowImportDialog}
+            supplierName={supplierName}
+            onSuccess={fetchProducts}
+          />
+        </>
       )}
     </div>
   );
