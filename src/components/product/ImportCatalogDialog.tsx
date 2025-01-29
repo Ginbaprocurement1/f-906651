@@ -1,142 +1,165 @@
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Download, Upload } from "lucide-react";
-import { useState } from "react";
+import { useCallback, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import { toast } from "@/hooks/use-toast";
 import * as XLSX from 'xlsx';
-import { Product } from "@/types/product";
+import { toast } from "@/hooks/use-toast";
 
 interface ImportCatalogDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   supplierName: string;
-  onSuccess?: () => void;
+  onSuccess: () => void;
 }
 
-export const ImportCatalogDialog = ({
-  open,
+export const ImportCatalogDialog = ({ 
+  open, 
   onOpenChange,
   supplierName,
-  onSuccess
+  onSuccess 
 }: ImportCatalogDialogProps) => {
-  const [isLoading, setIsLoading] = useState(false);
+  const [isUploading, setIsUploading] = useState(false);
 
   const handleDownload = async () => {
     try {
-      const { data: products, error } = await supabase
+      const { data, error } = await supabase
         .from('master_product')
         .select('product_name, product_description, product_uom, product_category_l1, price_without_vat, price_with_vat, ref_supplier, manufacturer')
         .eq('supplier_name', supplierName);
 
       if (error) throw error;
 
-      const ws = XLSX.utils.json_to_sheet(products || []);
+      if (!data || data.length === 0) {
+        toast({
+          variant: "destructive",
+          title: "Error",
+          description: "No se encontraron productos para descargar",
+        });
+        return;
+      }
+
+      const ws = XLSX.utils.json_to_sheet(data);
       const wb = XLSX.utils.book_new();
       XLSX.utils.book_append_sheet(wb, ws, "Products");
-      XLSX.writeFile(wb, "product_catalog.xlsx");
+      XLSX.writeFile(wb, "product_template.xlsx");
+
+      toast({
+        title: "Éxito",
+        description: "Plantilla descargada correctamente",
+      });
     } catch (error) {
-      console.error('Error downloading catalog:', error);
+      console.error('Error downloading template:', error);
       toast({
         variant: "destructive",
         title: "Error",
-        description: "No se pudo descargar el catálogo",
+        description: "No se pudo descargar la plantilla",
       });
     }
   };
 
-  const handleUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0];
-    if (!file) return;
+  const handleUpload = useCallback(async (event: React.ChangeEvent<HTMLInputElement>) => {
+    if (!event.target.files || event.target.files.length === 0) return;
 
-    setIsLoading(true);
+    const file = event.target.files[0];
+    setIsUploading(true);
+
     try {
-      const reader = new FileReader();
-      reader.onload = async (e) => {
-        const data = new Uint8Array(e.target?.result as ArrayBuffer);
-        const workbook = XLSX.read(data, { type: 'array' });
-        const worksheet = workbook.Sheets[workbook.SheetNames[0]];
-        const jsonData = XLSX.utils.sheet_to_json(worksheet);
+      const data = await file.arrayBuffer();
+      const workbook = XLSX.read(data);
+      const worksheet = workbook.Sheets[workbook.SheetNames[0]];
+      const jsonData = XLSX.utils.sheet_to_json(worksheet);
 
-        for (const row of jsonData) {
-          const product: Partial<Product> & { supplier_name: string } = {
-            supplier_name: supplierName,
-            product_name: (row as any).product_name,
-            product_description: (row as any).product_description,
-            product_uom: (row as any).product_uom,
-            product_category_l1: (row as any).product_category_l1,
-            price_without_vat: parseFloat((row as any).price_without_vat),
-            price_with_vat: parseFloat((row as any).price_with_vat),
-            ref_supplier: (row as any).ref_supplier,
-            manufacturer: (row as any).manufacturer,
-          };
+      for (const row of jsonData) {
+        const { data: existingProduct, error: searchError } = await supabase
+          .from('master_product')
+          .select('product_id')
+          .eq('supplier_name', supplierName)
+          .eq('product_name', row.product_name)
+          .maybeSingle();
 
-          const { data: existingProduct } = await supabase
-            .from('master_product')
-            .select('product_id')
-            .eq('supplier_name', supplierName)
-            .eq('product_name', product.product_name)
-            .single();
-
-          if (existingProduct) {
-            const { error: updateError } = await supabase
-              .from('master_product')
-              .update(product)
-              .eq('product_id', existingProduct.product_id);
-
-            if (updateError) throw updateError;
-          } else {
-            const { error: insertError } = await supabase
-              .from('master_product')
-              .insert([product]);
-
-            if (insertError) throw insertError;
-          }
+        if (searchError) {
+          console.error('Error searching for product:', searchError);
+          continue;
         }
 
-        toast({
-          title: "Catálogo actualizado",
-          description: "El catálogo se ha actualizado correctamente",
-        });
-        onSuccess?.();
-        onOpenChange(false);
-      };
-      reader.readAsArrayBuffer(file);
+        const productData = {
+          ...row,
+          supplier_name: supplierName,
+        };
+
+        if (existingProduct) {
+          const { error: updateError } = await supabase
+            .from('master_product')
+            .update(productData)
+            .eq('product_id', existingProduct.product_id);
+
+          if (updateError) {
+            console.error('Error updating product:', updateError);
+          }
+        } else {
+          const { error: insertError } = await supabase
+            .from('master_product')
+            .insert([productData]);
+
+          if (insertError) {
+            console.error('Error inserting product:', insertError);
+          }
+        }
+      }
+
+      toast({
+        title: "Éxito",
+        description: "Productos actualizados correctamente",
+      });
+      onSuccess();
     } catch (error) {
-      console.error('Error uploading catalog:', error);
+      console.error('Error processing file:', error);
       toast({
         variant: "destructive",
         title: "Error",
-        description: "No se pudo actualizar el catálogo",
+        description: "No se pudo procesar el archivo",
       });
     } finally {
-      setIsLoading(false);
+      setIsUploading(false);
+      event.target.value = '';
     }
-  };
+  }, [supplierName, onSuccess]);
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[425px]">
+      <DialogContent>
         <DialogHeader>
-          <DialogTitle>Importar catálogo</DialogTitle>
+          <DialogTitle>Importar catálogo desde plantilla</DialogTitle>
         </DialogHeader>
-        <div className="space-y-4">
-          <Button onClick={handleDownload} className="w-full" variant="outline">
-            <Download className="mr-2 h-4 w-4" />
-            Descargar plantilla
-          </Button>
-          <div className="relative">
-            <Button disabled={isLoading} className="w-full">
-              <Upload className="mr-2 h-4 w-4" />
-              {isLoading ? "Subiendo..." : "Subir catálogo"}
+        <div className="space-y-6">
+          <div>
+            <p className="text-sm text-muted-foreground mb-4">
+              Descarga la plantilla con tus productos actuales, modifícala y súbela de nuevo para actualizar tu catálogo.
+            </p>
+          </div>
+          <div className="flex flex-col gap-4">
+            <Button onClick={handleDownload} className="w-full">
+              <Download className="mr-2 h-4 w-4" />
+              Descargar plantilla
             </Button>
-            <input
-              type="file"
-              accept=".xlsx,.xls"
-              onChange={handleUpload}
-              className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
-              disabled={isLoading}
-            />
+            <div className="relative">
+              <Button 
+                variant="outline" 
+                className="w-full"
+                disabled={isUploading}
+              >
+                <Upload className="mr-2 h-4 w-4" />
+                {isUploading ? 'Subiendo...' : 'Subir plantilla actualizada'}
+                <input
+                  type="file"
+                  className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+                  accept=".xlsx,.xls"
+                  onChange={handleUpload}
+                  disabled={isUploading}
+                />
+              </Button>
+            </div>
           </div>
         </div>
       </DialogContent>
