@@ -200,11 +200,6 @@ const ProductList = () => {
               <h1 className="text-3xl font-bold">
             {searchFromUrl ? "Búsqueda de productos" : (categoryFromUrl || (userRole === 'Supplier' ? "Mis Productos" : "Nuestros productos"))}
               </h1>
-              <p className="text-muted-foreground mt-2">
-                {userRole === 'Supplier' 
-                  ? "Gestiona tu catálogo de productos"
-                  : "Browse through our extensive collection of construction materials"}
-              </p>
               <div className="flex gap-4">
                 <Button onClick={() => setShowProductForm(true)}>
                   <Plus className="h-4 w-4 mr-2" />
