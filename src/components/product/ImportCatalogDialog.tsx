@@ -13,6 +13,17 @@ interface ImportCatalogDialogProps {
   onSuccess: () => void;
 }
 
+interface ProductTemplate {
+  product_name: string;
+  product_description?: string;
+  product_uom: string;
+  product_category_l1?: string;
+  price_without_vat: number;
+  price_with_vat: number;
+  ref_supplier?: string;
+  manufacturer?: string;
+}
+
 export const ImportCatalogDialog = ({ 
   open, 
   onOpenChange,
@@ -68,7 +79,7 @@ export const ImportCatalogDialog = ({
       const data = await file.arrayBuffer();
       const workbook = XLSX.read(data);
       const worksheet = workbook.Sheets[workbook.SheetNames[0]];
-      const jsonData = XLSX.utils.sheet_to_json(worksheet);
+      const jsonData = XLSX.utils.sheet_to_json(worksheet) as ProductTemplate[];
 
       for (const row of jsonData) {
         const { data: existingProduct, error: searchError } = await supabase
