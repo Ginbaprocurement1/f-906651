@@ -34,9 +34,9 @@ const ProductList = () => {
   const [userRole, setUserRole] = useState<string | null>(null);
   const [supplierName, setSupplierName] = useState<string | null>(null);
   const [showProductForm, setShowProductForm] = useState(false);
+  const [productToEdit, setProductToEdit] = useState<Product | null>(null);
   const navigate = useNavigate();
 
-  // Function to fetch products
   const fetchProducts = async () => {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) {
@@ -186,6 +186,16 @@ const ProductList = () => {
     setFilteredProducts(filtered);
   };
 
+  const handleEdit = (product: Product) => {
+    setProductToEdit(product);
+    setShowProductForm(true);
+  };
+
+  const handleDelete = (productId: number) => {
+    setProducts(prevProducts => prevProducts.filter(p => p.product_id !== productId));
+    setFilteredProducts(prevProducts => prevProducts.filter(p => p.product_id !== productId));
+  };
+
   return (
     <div className="min-h-screen flex flex-col">
       <Header />
@@ -198,10 +208,13 @@ const ProductList = () => {
                 Volver
               </Button>
               <h1 className="text-3xl font-bold text-left">
-            {searchFromUrl ? "Búsqueda de productos" : (categoryFromUrl || (userRole === 'Supplier' ? "Mis Productos" : "Nuestros productos"))}
+                {searchFromUrl ? "Búsqueda de productos" : (categoryFromUrl || (userRole === 'Supplier' ? "Mis Productos" : "Nuestros productos"))}
               </h1>
               <div className="flex gap-4">
-                <Button onClick={() => setShowProductForm(true)}>
+                <Button onClick={() => {
+                  setProductToEdit(null);
+                  setShowProductForm(true);
+                }}>
                   <Plus className="h-4 w-4 mr-2" />
                   Añadir nuevo producto
                 </Button>
@@ -220,7 +233,13 @@ const ProductList = () => {
           </div>
           
           <div className="col-span-9">
-            <ProductGrid products={filteredProducts} isLoading={isLoading} />
+            <ProductGrid 
+              products={filteredProducts} 
+              isLoading={isLoading}
+              userRole={userRole}
+              onEdit={handleEdit}
+              onDelete={handleDelete}
+            />
           </div>
         </div>
       </main>
@@ -232,6 +251,7 @@ const ProductList = () => {
           onOpenChange={setShowProductForm}
           supplierName={supplierName}
           onSuccess={fetchProducts}
+          productToEdit={productToEdit}
         />
       )}
     </div>
