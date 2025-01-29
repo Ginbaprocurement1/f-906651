@@ -193,6 +193,10 @@ const ProductList = () => {
         <div className="mb-8">
           {userRole === 'Supplier' && (
             <div className="flex justify-between items-center mb-4">
+              <Button variant="ghost" onClick={() => navigate(-1)}>
+                <ArrowLeft className="h-4 w-4 mr-2" />
+                Volver
+              </Button>
               <div className="flex gap-4">
                 <Button onClick={() => setShowProductForm(true)}>
                   <Plus className="h-4 w-4 mr-2" />
@@ -203,10 +207,6 @@ const ProductList = () => {
                   Importar catálogo desde plantilla
                 </Button>
               </div>
-              <Button variant="ghost" onClick={() => navigate(-1)}>
-                <ArrowLeft className="h-4 w-4 mr-2" />
-                Volver
-              </Button>
             </div>
           )}
           <h1 className="text-3xl font-bold">
