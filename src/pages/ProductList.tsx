@@ -197,7 +197,7 @@ const ProductList = () => {
                 <ArrowLeft className="h-4 w-4 mr-2" />
                 Volver
               </Button>
-              <h1 className="text-3xl font-bold">
+              <h1 className="text-3xl font-bold text-left">
             {searchFromUrl ? "Búsqueda de productos" : (categoryFromUrl || (userRole === 'Supplier' ? "Mis Productos" : "Nuestros productos"))}
               </h1>
               <div className="flex gap-4">
