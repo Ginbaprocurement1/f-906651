@@ -174,11 +174,11 @@ const ProductList = () => {
       <main className="flex-1 container mx-auto mt-32 mb-8">
         <div className="mb-8">
           <h1 className="text-3xl font-bold">
-            {searchFromUrl ? "Product Search" : (categoryFromUrl || (userRole === 'Supplier' ? "My Products" : "Our Products"))}
+            {searchFromUrl ? "Búsqueda de productos" : (categoryFromUrl || (userRole === 'Supplier' ? "Mis Productos" : "Nuestros productos"))}
           </h1>
           <p className="text-muted-foreground mt-2">
             {userRole === 'Supplier' 
-              ? "Manage your product catalog"
+              ? "Gestiona tu catálogo de products"
               : "Browse through our extensive collection of construction materials"}
           </p>
         </div>
