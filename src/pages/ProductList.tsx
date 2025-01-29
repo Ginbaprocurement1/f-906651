@@ -190,7 +190,7 @@ const ProductList = () => {
     <div className="min-h-screen flex flex-col">
       <Header />
       <main className="flex-1 container mx-auto mt-32 mb-8">
-        <div className="mb-8">
+        <div className="mb-8 relative text-left">
           {userRole === 'Supplier' && (
             <div className="flex justify-between items-center mb-4">
               <Button variant="ghost" onClick={() => navigate(-1)}>
