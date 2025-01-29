@@ -4,7 +4,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Label } from "@/components/ui/label";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
 
@@ -13,15 +13,18 @@ interface ProductFormDialogProps {
   onOpenChange: (open: boolean) => void;
   supplierName: string;
   onSuccess?: () => void;
+  productToEdit?: any;
 }
 
 export const ProductFormDialog = ({ 
   open, 
   onOpenChange,
   supplierName,
-  onSuccess 
+  onSuccess,
+  productToEdit 
 }: ProductFormDialogProps) => {
   const [isLoading, setIsLoading] = useState(false);
+  const [categories, setCategories] = useState<string[]>([]);
   const [productData, setProductData] = useState({
     product_name: "",
     product_description: "",
@@ -33,6 +36,38 @@ export const ProductFormDialog = ({
     manufacturer: "",
   });
   const [selectedImage, setSelectedImage] = useState<File | null>(null);
+
+  useEffect(() => {
+    const fetchCategories = async () => {
+      const { data, error } = await supabase
+        .from('master_product_category')
+        .select('product_category');
+      
+      if (error) {
+        console.error('Error fetching categories:', error);
+        return;
+      }
+      
+      setCategories(data.map(cat => cat.product_category));
+    };
+
+    fetchCategories();
+  }, []);
+
+  useEffect(() => {
+    if (productToEdit) {
+      setProductData({
+        product_name: productToEdit.product_name || "",
+        product_description: productToEdit.product_description || "",
+        product_uom: productToEdit.product_uom || "",
+        product_category_l1: productToEdit.product_category_l1 || "",
+        price_without_vat: productToEdit.price_without_vat?.toString() || "",
+        price_with_vat: productToEdit.price_with_vat?.toString() || "",
+        ref_supplier: productToEdit.ref_supplier || "",
+        manufacturer: productToEdit.manufacturer || "",
+      });
+    }
+  }, [productToEdit]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -57,29 +92,47 @@ export const ProductFormDialog = ({
         imageUrl = publicUrl;
       }
 
-      const { error } = await supabase.from('master_product').insert({
+      const productPayload = {
         ...productData,
         supplier_name: supplierName,
-        product_image_url: imageUrl,
+        product_image_url: imageUrl || productToEdit?.product_image_url,
         price_without_vat: parseFloat(productData.price_without_vat),
         price_with_vat: parseFloat(productData.price_with_vat),
-      });
+      };
 
-      if (error) throw error;
+      if (productToEdit) {
+        const { error } = await supabase
+          .from('master_product')
+          .update(productPayload)
+          .eq('product_id', productToEdit.product_id);
 
-      toast({
-        title: "Producto creado",
-        description: "El producto se ha creado correctamente",
-      });
+        if (error) throw error;
+
+        toast({
+          title: "Producto actualizado",
+          description: "El producto se ha actualizado correctamente",
+        });
+      } else {
+        const { error } = await supabase
+          .from('master_product')
+          .insert([productPayload]);
+
+        if (error) throw error;
+
+        toast({
+          title: "Producto creado",
+          description: "El producto se ha creado correctamente",
+        });
+      }
 
       onSuccess?.();
       onOpenChange(false);
     } catch (error) {
-      console.error('Error creating product:', error);
+      console.error('Error saving product:', error);
       toast({
         variant: "destructive",
         title: "Error",
-        description: "No se pudo crear el producto. Por favor, inténtalo de nuevo.",
+        description: "No se pudo guardar el producto. Por favor, inténtalo de nuevo.",
       });
     } finally {
       setIsLoading(false);
@@ -90,7 +143,7 @@ export const ProductFormDialog = ({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-[600px]">
         <DialogHeader>
-          <DialogTitle>Añadir nuevo producto</DialogTitle>
+          <DialogTitle>{productToEdit ? 'Modificar producto' : 'Añadir nuevo producto'}</DialogTitle>
         </DialogHeader>
         <form onSubmit={handleSubmit} className="space-y-4">
           <div className="grid gap-4">
@@ -147,8 +200,11 @@ export const ProductFormDialog = ({
                     <SelectValue placeholder="Seleccionar categoría" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="category1">Categoría 1</SelectItem>
-                    <SelectItem value="category2">Categoría 2</SelectItem>
+                    {categories.map((category) => (
+                      <SelectItem key={category} value={category}>
+                        {category}
+                      </SelectItem>
+                    ))}
                   </SelectContent>
                 </Select>
               </div>
@@ -216,7 +272,7 @@ export const ProductFormDialog = ({
               Cancelar
             </Button>
             <Button type="submit" disabled={isLoading}>
-              {isLoading ? "Creando..." : "Aceptar"}
+              {isLoading ? (productToEdit ? "Actualizando..." : "Creando...") : (productToEdit ? "Actualizar" : "Crear")}
             </Button>
           </DialogFooter>
         </form>

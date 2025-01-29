@@ -5,6 +5,7 @@ import { useState, useEffect, useRef } from "react";
 import { Input } from "@/components/ui/input";
 import { useCartStore } from "@/stores/useCartStore";
 import { useNavigate } from "react-router-dom";
+import { supabase } from "@/integrations/supabase/client";
 
 interface Product {
   product_id: number;
@@ -19,9 +20,12 @@ interface Product {
 
 interface ProductCardProps {
   product: Product;
+  userRole?: string;
+  onEdit?: (product: Product) => void;
+  onDelete?: (productId: number) => void;
 }
 
-export const ProductCard = ({ product }: ProductCardProps) => {
+export const ProductCard = ({ product, userRole, onEdit, onDelete }: ProductCardProps) => {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [quantity, setQuantity] = useState(1);
   const [buttonRef, setButtonRef] = useState<HTMLButtonElement | null>(null);
@@ -75,7 +79,6 @@ export const ProductCard = ({ product }: ProductCardProps) => {
   }, [buttonRef]);
 
   const handleProductClick = (event: React.MouseEvent) => {
-    // Don't navigate if clicking on the add to cart button or quantity dialog
     if (
       buttonRef?.contains(event.target as Node) ||
       dialogRef.current?.contains(event.target as Node)
@@ -83,6 +86,39 @@ export const ProductCard = ({ product }: ProductCardProps) => {
       return;
     }
     navigate(`/productos/${product.product_id}`);
+  };
+
+  const handleDelete = async (event: React.MouseEvent) => {
+    event.stopPropagation();
+    if (!product.product_id) return;
+
+    try {
+      const { error } = await supabase
+        .from('master_product')
+        .delete()
+        .eq('product_id', product.product_id);
+
+      if (error) throw error;
+
+      toast({
+        title: "Producto eliminado",
+        description: "El producto se ha eliminado correctamente",
+      });
+      
+      onDelete?.(product.product_id);
+    } catch (error) {
+      console.error('Error deleting product:', error);
+      toast({
+        variant: "destructive",
+        title: "Error",
+        description: "No se pudo eliminar el producto",
+      });
+    }
+  };
+
+  const handleEdit = (event: React.MouseEvent) => {
+    event.stopPropagation();
+    onEdit?.(product);
   };
 
   return (
@@ -110,10 +146,21 @@ export const ProductCard = ({ product }: ProductCardProps) => {
           </p>
         </div>
         <div className="mt-4 relative">
-          <Button className="w-full group hover:bg-secondary" onClick={handleAddToCart}>
-            <ShoppingCart className="mr-2 h-4 w-4 group-hover:scale-110 transition-transform" />
-            Add to Cart
-          </Button>
+          {userRole === 'Supplier' ? (
+            <div className="flex gap-2">
+              <Button className="flex-1" onClick={handleEdit}>
+                Modificar
+              </Button>
+              <Button variant="destructive" className="flex-1" onClick={handleDelete}>
+                Eliminar
+              </Button>
+            </div>
+          ) : (
+            <Button className="w-full group hover:bg-secondary" onClick={handleAddToCart}>
+              <ShoppingCart className="mr-2 h-4 w-4 group-hover:scale-110 transition-transform" />
+              Add to Cart
+            </Button>
+          )}
 
           {isDialogOpen && buttonRef && (
             <div
