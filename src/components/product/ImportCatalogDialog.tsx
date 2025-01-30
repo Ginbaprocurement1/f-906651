@@ -53,15 +53,34 @@ export const ImportCatalogDialog = ({
 
       const ws = XLSX.utils.json_to_sheet(data);
       
-      // Protect the product_id column
-      ws['!protect'] = true;
-      ws['!col'] = [{ width: 15 }]; // Set width for first column
+      // Set column protection and width
+      ws['!protect'] = {
+        password: '',
+        selectLockedCells: true,
+        selectUnlockedCells: true,
+        formatCells: false,
+        formatColumns: false,
+        formatRows: false,
+        insertColumns: false,
+        insertRows: false,
+        insertHyperlinks: false,
+        deleteColumns: false,
+        deleteRows: false,
+        sort: false,
+        autoFilter: false,
+        pivotTables: false
+      };
+      ws['!cols'] = [{ width: 15 }];
       
       // Lock the first column (product_id)
       const range = XLSX.utils.decode_range(ws['!ref'] || 'A1');
       for (let R = range.s.r; R <= range.e.r; ++R) {
         const cell = ws[XLSX.utils.encode_cell({r: R, c: 0})];
-        if (cell) cell.l = { locked: true };
+        if (cell) {
+          if (!ws['!cells']) ws['!cells'] = {};
+          if (!ws['!cells'][R]) ws['!cells'][R] = {};
+          ws['!cells'][R][0] = { style: { locked: true } };
+        }
       }
 
       const wb = XLSX.utils.book_new();
