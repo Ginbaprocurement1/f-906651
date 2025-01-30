@@ -14,7 +14,6 @@ interface ImportCatalogDialogProps {
 }
 
 interface ProductTemplate {
-  product_id: number;
   product_name: string;
   product_description?: string;
   product_uom: string;
@@ -37,7 +36,7 @@ export const ImportCatalogDialog = ({
     try {
       const { data, error } = await supabase
         .from('master_product')
-        .select('product_id, product_name, product_description, product_uom, product_category_l1, price_without_vat, price_with_vat, ref_supplier, manufacturer')
+        .select('product_name, product_description, product_uom, product_category_l1, price_without_vat, price_with_vat, ref_supplier, manufacturer')
         .eq('supplier_name', supplierName);
 
       if (error) throw error;
@@ -52,37 +51,6 @@ export const ImportCatalogDialog = ({
       }
 
       const ws = XLSX.utils.json_to_sheet(data);
-      
-      // Set column protection and width
-      ws['!protect'] = {
-        password: '',
-        selectLockedCells: true,
-        selectUnlockedCells: true,
-        formatCells: false,
-        formatColumns: false,
-        formatRows: false,
-        insertColumns: false,
-        insertRows: false,
-        insertHyperlinks: false,
-        deleteColumns: false,
-        deleteRows: false,
-        sort: false,
-        autoFilter: false,
-        pivotTables: false
-      };
-      ws['!cols'] = [{ width: 15 }];
-      
-      // Lock the first column (product_id)
-      const range = XLSX.utils.decode_range(ws['!ref'] || 'A1');
-      for (let R = range.s.r; R <= range.e.r; ++R) {
-        const cell = ws[XLSX.utils.encode_cell({r: R, c: 0})];
-        if (cell) {
-          if (!ws['!cells']) ws['!cells'] = {};
-          if (!ws['!cells'][R]) ws['!cells'][R] = {};
-          ws['!cells'][R][0] = { style: { locked: true } };
-        }
-      }
-
       const wb = XLSX.utils.book_new();
       XLSX.utils.book_append_sheet(wb, ws, "Products");
       XLSX.writeFile(wb, "product_template.xlsx");
@@ -117,8 +85,8 @@ export const ImportCatalogDialog = ({
 
       if (fetchError) throw fetchError;
 
-      const existingProductIds = new Set(existingProducts?.map(p => p.product_id) || []);
-      const uploadedProductIds = new Set();
+      const existingProductNames = new Set(existingProducts?.map(p => p.product_name) || []);
+      const uploadedProductNames = new Set();
 
       const data = await file.arrayBuffer();
       const workbook = XLSX.read(data);
@@ -128,24 +96,24 @@ export const ImportCatalogDialog = ({
       // Process each row in the Excel file
       for (const row of jsonData) {
         try {
-          if (!row.product_id) {
-            errors.push(`El producto "${row.product_name}" no tiene ID`);
+          if (!row.product_name) {
+            errors.push(`Hay un producto sin nombre`);
             continue;
           }
 
-          uploadedProductIds.add(row.product_id);
+          uploadedProductNames.add(row.product_name);
 
           const productData = {
             ...row,
             supplier_name: supplierName,
           };
 
-          if (existingProductIds.has(row.product_id)) {
+          if (existingProductNames.has(row.product_name)) {
             // Update existing product
             const { error: updateError } = await supabase
               .from('master_product')
               .update(productData)
-              .eq('product_id', row.product_id)
+              .eq('product_name', row.product_name)
               .eq('supplier_name', supplierName);
 
             if (updateError) {
@@ -167,15 +135,15 @@ export const ImportCatalogDialog = ({
       }
 
       // Delete products that are not in the uploaded file
-      const productsToDelete = Array.from(existingProductIds)
-        .filter(id => !uploadedProductIds.has(id));
+      const productsToDelete = Array.from(existingProductNames)
+        .filter(name => !uploadedProductNames.has(name));
 
       if (productsToDelete.length > 0) {
         const { error: deleteError } = await supabase
           .from('master_product')
           .delete()
           .eq('supplier_name', supplierName)
-          .in('product_id', productsToDelete);
+          .in('product_name', productsToDelete);
 
         if (deleteError) {
           errors.push('No se pudieron eliminar algunos productos obsoletos');
@@ -225,7 +193,7 @@ export const ImportCatalogDialog = ({
           <div>
             <p className="text-sm text-muted-foreground mb-4">
               Descarga la plantilla con tus productos actuales, modifícala y súbela de nuevo para actualizar tu catálogo.
-              El ID de producto no debe modificarse ya que es el identificador único de cada producto.
+              El nombre del producto es el identificador único de cada producto.
             </p>
           </div>
           <div className="flex flex-col gap-4">
