@@ -458,6 +458,13 @@ export type Database = {
         }
         Relationships: [
           {
+            foreignKeyName: "master_product_product_category_l1_fkey"
+            columns: ["product_category_l1"]
+            isOneToOne: false
+            referencedRelation: "master_product_category"
+            referencedColumns: ["product_category"]
+          },
+          {
             foreignKeyName: "master_product_supplier_name_fkey"
             columns: ["supplier_name"]
             isOneToOne: false
