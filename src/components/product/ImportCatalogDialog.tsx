@@ -14,6 +14,7 @@ interface ImportCatalogDialogProps {
 }
 
 interface ProductTemplate {
+  product_id: number;
   product_name: string;
   product_description?: string;
   product_uom: string;
@@ -36,7 +37,7 @@ export const ImportCatalogDialog = ({
     try {
       const { data, error } = await supabase
         .from('master_product')
-        .select('product_name, product_description, product_uom, product_category_l1, price_without_vat, price_with_vat, ref_supplier, manufacturer')
+        .select('product_id, product_name, product_description, product_uom, product_category_l1, price_without_vat, price_with_vat, ref_supplier, manufacturer')
         .eq('supplier_name', supplierName);
 
       if (error) throw error;
@@ -51,6 +52,18 @@ export const ImportCatalogDialog = ({
       }
 
       const ws = XLSX.utils.json_to_sheet(data);
+      
+      // Protect the product_id column
+      ws['!protect'] = true;
+      ws['!col'] = [{ width: 15 }]; // Set width for first column
+      
+      // Lock the first column (product_id)
+      const range = XLSX.utils.decode_range(ws['!ref'] || 'A1');
+      for (let R = range.s.r; R <= range.e.r; ++R) {
+        const cell = ws[XLSX.utils.encode_cell({r: R, c: 0})];
+        if (cell) cell.l = { locked: true };
+      }
+
       const wb = XLSX.utils.book_new();
       XLSX.utils.book_append_sheet(wb, ws, "Products");
       XLSX.writeFile(wb, "product_template.xlsx");
@@ -74,55 +87,101 @@ export const ImportCatalogDialog = ({
 
     const file = event.target.files[0];
     setIsUploading(true);
+    const errors: string[] = [];
 
     try {
+      // Get existing products for this supplier
+      const { data: existingProducts, error: fetchError } = await supabase
+        .from('master_product')
+        .select('product_id, product_name')
+        .eq('supplier_name', supplierName);
+
+      if (fetchError) throw fetchError;
+
+      const existingProductIds = new Set(existingProducts?.map(p => p.product_id) || []);
+      const uploadedProductIds = new Set();
+
       const data = await file.arrayBuffer();
       const workbook = XLSX.read(data);
       const worksheet = workbook.Sheets[workbook.SheetNames[0]];
       const jsonData = XLSX.utils.sheet_to_json(worksheet) as ProductTemplate[];
 
+      // Process each row in the Excel file
       for (const row of jsonData) {
-        const { data: existingProduct, error: searchError } = await supabase
-          .from('master_product')
-          .select('product_id')
-          .eq('supplier_name', supplierName)
-          .eq('product_name', row.product_name)
-          .maybeSingle();
-
-        if (searchError) {
-          console.error('Error searching for product:', searchError);
-          continue;
-        }
-
-        const productData = {
-          ...row,
-          supplier_name: supplierName,
-        };
-
-        if (existingProduct) {
-          const { error: updateError } = await supabase
-            .from('master_product')
-            .update(productData)
-            .eq('product_id', existingProduct.product_id);
-
-          if (updateError) {
-            console.error('Error updating product:', updateError);
+        try {
+          if (!row.product_id) {
+            errors.push(`El producto "${row.product_name}" no tiene ID`);
+            continue;
           }
-        } else {
-          const { error: insertError } = await supabase
-            .from('master_product')
-            .insert([productData]);
 
-          if (insertError) {
-            console.error('Error inserting product:', insertError);
+          uploadedProductIds.add(row.product_id);
+
+          const productData = {
+            ...row,
+            supplier_name: supplierName,
+          };
+
+          if (existingProductIds.has(row.product_id)) {
+            // Update existing product
+            const { error: updateError } = await supabase
+              .from('master_product')
+              .update(productData)
+              .eq('product_id', row.product_id)
+              .eq('supplier_name', supplierName);
+
+            if (updateError) {
+              errors.push(`No se pudo actualizar el producto "${row.product_name}"`);
+            }
+          } else {
+            // Insert new product
+            const { error: insertError } = await supabase
+              .from('master_product')
+              .insert([productData]);
+
+            if (insertError) {
+              errors.push(`No se pudo crear el producto "${row.product_name}"`);
+            }
           }
+        } catch (rowError) {
+          errors.push(`Error procesando el producto "${row.product_name}": ${rowError.message}`);
         }
       }
 
-      toast({
-        title: "Éxito",
-        description: "Productos actualizados correctamente",
-      });
+      // Delete products that are not in the uploaded file
+      const productsToDelete = Array.from(existingProductIds)
+        .filter(id => !uploadedProductIds.has(id));
+
+      if (productsToDelete.length > 0) {
+        const { error: deleteError } = await supabase
+          .from('master_product')
+          .delete()
+          .eq('supplier_name', supplierName)
+          .in('product_id', productsToDelete);
+
+        if (deleteError) {
+          errors.push('No se pudieron eliminar algunos productos obsoletos');
+        }
+      }
+
+      if (errors.length > 0) {
+        toast({
+          variant: "destructive",
+          title: "Errores durante la actualización",
+          description: (
+            <div className="mt-2 space-y-2">
+              {errors.map((error, index) => (
+                <p key={index}>{error}</p>
+              ))}
+            </div>
+          ),
+        });
+      } else {
+        toast({
+          title: "Éxito",
+          description: "Productos actualizados correctamente",
+        });
+      }
+      
       onSuccess();
     } catch (error) {
       console.error('Error processing file:', error);
@@ -147,6 +206,7 @@ export const ImportCatalogDialog = ({
           <div>
             <p className="text-sm text-muted-foreground mb-4">
               Descarga la plantilla con tus productos actuales, modifícala y súbela de nuevo para actualizar tu catálogo.
+              El ID de producto no debe modificarse ya que es el identificador único de cada producto.
             </p>
           </div>
           <div className="flex flex-col gap-4">
