@@ -15,6 +15,8 @@ import Invoices from "./pages/Invoices";
 import Login from "./pages/Login";
 import ProductList from "./pages/ProductList";
 import ProductDetail from "./pages/ProductDetail";
+import SupplierStock from "./pages/SupplierStock";
+import WarehouseStock from "./pages/WarehouseStock";
 
 const queryClient = new QueryClient();
 
@@ -121,6 +123,22 @@ const App = () => (
             element={
               <ProtectedRoute>
                 <Invoices />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/stock"
+            element={
+              <ProtectedRoute>
+                <SupplierStock />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/stock/:warehouseId"
+            element={
+              <ProtectedRoute>
+                <WarehouseStock />
               </ProtectedRoute>
             }
           />
