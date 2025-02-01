@@ -10,7 +10,7 @@ export interface ProductGridProps {
 }
 
 export const ProductGrid = ({ 
-  products = [], // Provide default empty array
+  products, 
   isLoading,
   userRole,
   onEditProduct,
@@ -33,14 +33,6 @@ export const ProductGrid = ({
             </div>
           </div>
         ))}
-      </div>
-    );
-  }
-
-  if (!products || products.length === 0) {
-    return (
-      <div className="text-center py-12">
-        <p className="text-lg text-gray-500">No hay productos disponibles</p>
       </div>
     );
   }

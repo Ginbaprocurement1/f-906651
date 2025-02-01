@@ -587,7 +587,6 @@ export type Database = {
           created_at: string
           location_name: string | null
           pickup_location_id: number
-          pickup_location_image: string | null
           province: string | null
           supplier_id: number | null
           town: string | null
@@ -599,7 +598,6 @@ export type Database = {
           created_at?: string
           location_name?: string | null
           pickup_location_id?: number
-          pickup_location_image?: string | null
           province?: string | null
           supplier_id?: number | null
           town?: string | null
@@ -611,7 +609,6 @@ export type Database = {
           created_at?: string
           location_name?: string | null
           pickup_location_id?: number
-          pickup_location_image?: string | null
           province?: string | null
           supplier_id?: number | null
           town?: string | null
@@ -946,10 +943,10 @@ export type Database = {
         }
         Relationships: []
       }
-      supplier_stock: {
+      stock: {
         Row: {
           created_at: string
-          location_id: number | null
+          location_id: string | null
           product_id: number | null
           quantity: number | null
           stock_id: string
@@ -957,7 +954,7 @@ export type Database = {
         }
         Insert: {
           created_at?: string
-          location_id?: number | null
+          location_id?: string | null
           product_id?: number | null
           quantity?: number | null
           stock_id?: string
@@ -965,20 +962,13 @@ export type Database = {
         }
         Update: {
           created_at?: string
-          location_id?: number | null
+          location_id?: string | null
           product_id?: number | null
           quantity?: number | null
           stock_id?: string
           supplier_id?: number | null
         }
         Relationships: [
-          {
-            foreignKeyName: "stock_location_id_fkey"
-            columns: ["location_id"]
-            isOneToOne: false
-            referencedRelation: "master_suppliers_locations"
-            referencedColumns: ["pickup_location_id"]
-          },
           {
             foreignKeyName: "stock_product_id_fkey"
             columns: ["product_id"]
