@@ -30,7 +30,6 @@ export const WarehouseStock = () => {
     const fetchWarehouseAndStock = async () => {
       if (!id) return;
 
-      // Convert id to number for the query
       const locationId = parseInt(id, 10);
       if (isNaN(locationId)) return;
 
@@ -61,7 +60,7 @@ export const WarehouseStock = () => {
           stock_id: item.stock_id,
           product_id: item.product_id,
           product_name: item.product.product_name,
-          quantity: item.quantity
+          quantity: item.quantity || 0
         }));
         setStock(formattedStock);
         setOriginalStock(formattedStock);
