@@ -1,14 +1,14 @@
 import { createBrowserRouter, RouterProvider } from "react-router-dom";
 import { Layout } from "./components/layout/Layout";
-import Index from "./pages/Index";
-import Login from "./pages/Login";
-import Register from "./pages/Register";
-import Products from "./pages/Products";
-import Orders from "./pages/Orders";
-import Invoices from "./pages/Invoices";
-import Financing from "./pages/Financing";
-import Projects from "./pages/Projects";
-import Favorites from "./pages/Favorites";
+import { Index } from "./pages/Index";
+import { Login } from "./pages/Login";
+import { Register } from "./pages/Register";
+import { Products } from "./pages/Products";
+import { Orders } from "./pages/Orders";
+import { Invoices } from "./pages/Invoices";
+import { Financing } from "./pages/Financing";
+import { Projects } from "./pages/Projects";
+import { Favorites } from "./pages/Favorites";
 import { SupplierStock } from "./pages/SupplierStock";
 import { WarehouseStock } from "./pages/WarehouseStock";
 
