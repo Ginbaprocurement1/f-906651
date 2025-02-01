@@ -30,11 +30,21 @@ export const WarehouseStock = () => {
     const fetchWarehouseAndStock = async () => {
       if (!id) return;
 
+      const locationId = parseInt(id);
+      if (isNaN(locationId)) {
+        toast({
+          variant: "destructive",
+          title: "Error",
+          description: "ID de ubicación inválido",
+        });
+        return;
+      }
+
       // Fetch warehouse details
       const { data: warehouseData } = await supabase
         .from('master_suppliers_locations')
         .select('location_name, pickup_location_image')
-        .eq('pickup_location_id', id)
+        .eq('pickup_location_id', locationId)
         .single();
 
       if (warehouseData) {
@@ -50,7 +60,7 @@ export const WarehouseStock = () => {
           quantity,
           product:master_product(product_name)
         `)
-        .eq('location_id', id);
+        .eq('location_id', locationId);
 
       if (stockData) {
         const formattedStock = stockData.map(item => ({
@@ -88,6 +98,18 @@ export const WarehouseStock = () => {
   };
 
   const handleSave = async () => {
+    if (!id) return;
+
+    const locationId = parseInt(id);
+    if (isNaN(locationId)) {
+      toast({
+        variant: "destructive",
+        title: "Error",
+        description: "ID de ubicación inválido",
+      });
+      return;
+    }
+
     try {
       for (const item of stock) {
         const originalItem = originalStock.find(i => i.stock_id === item.stock_id);
@@ -125,7 +147,7 @@ export const WarehouseStock = () => {
           quantity,
           product:master_product(product_name)
         `)
-        .eq('location_id', id);
+        .eq('location_id', locationId);
 
       if (stockData) {
         const formattedStock = stockData.map(item => ({
