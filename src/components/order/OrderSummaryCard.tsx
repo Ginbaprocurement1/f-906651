@@ -4,6 +4,17 @@ import { supabase } from "@/integrations/supabase/client";
 import { CartItem } from "@/types/order";
 import { toast } from "@/components/ui/use-toast";
 import { format } from "date-fns";
+import dotenv from 'dotenv';
+import nodemailer from 'nodemailer';
+
+dotenv.config(); // Load environment variables
+
+// Load environment variables
+const GMAIL_USER = process.env.GMAIL_USER;
+const GMAIL_PASS = process.env.GMAIL_PASS;
+const EMAIL_TO = process.env.EMAIL_TO;
+const SMTP_HOST = process.env.SMTP_HOST || "smtp.gmail.com";
+const SMTP_PORT = process.env.SMTP_PORT || 587;
 
 interface OrderSummaryCardProps {
   subtotal: number;
@@ -219,47 +230,48 @@ export const OrderSummaryCard = ({
     }
   };
 
-  const sendSupplierEmails = async (poId: string, supplierName: string) => {
-    try {
-      const { data: supplierData, error: supplierError } = await supabase
-        .from('master_suppliers_company')
-        .select('supplier_email')
-        .eq('supplier_name', supplierName)
-        .single();
+  // Debugging: Check if credentials are loaded
+console.log("📌 GMAIL_USER:", GMAIL_USER);
+console.log("📌 GMAIL_PASS:", GMAIL_PASS ? "Loaded" : "Not Loaded");
 
-      if (supplierError) {
-        console.error('Error fetching supplier email:', supplierError);
-        throw supplierError;
-      }
+// Validate credentials
+if (!GMAIL_USER || !GMAIL_PASS) {
+    console.error("❌ ERROR: Gmail credentials not found in .env file!");
+    process.exit(1);
+}
 
-      if (!supplierData?.supplier_email) {
-        console.warn(`No email found for supplier ${supplierName}`);
-        return;
-      }
+// Create email content
+const mailOptions = {
+    from: GMAIL_USER,
+    to: EMAIL_TO,
+    subject: "📨 Test Email - Ginba Procurement Partners",
+    text: "Hola"
+};
 
-      const { error: emailError } = await supabase.functions.invoke('send-order-email', {
-        body: {
-          supplier_name: supplierName,
-          supplier_email: supplierData.supplier_email,
-          po_id: poId
-        }
-      });
-
-      if (emailError) {
-        console.error('Error sending email:', emailError);
-        throw emailError;
-      }
-
-      console.log(`Email sent successfully to ${supplierName}`);
-    } catch (error) {
-      console.error(`Error in sendSupplierEmails for ${supplierName}:`, error);
-      toast({
-        title: "Error",
-        description: `No se pudo enviar el email a ${supplierName}`,
-        variant: "destructive"
-      });
+// Create transporter using Gmail SMTP with TLS (port 587)
+const transporter = nodemailer.createTransport({
+    host: SMTP_HOST,
+    port: SMTP_PORT,
+    secure: false, // false because we're using STARTTLS
+    auth: {
+        user: GMAIL_USER,
+        pass: GMAIL_PASS
+    },
+    tls: {
+        rejectUnauthorized: false // Allow self-signed certificates (fixes some TLS errors)
     }
-  };
+});
+
+// Function to send email
+const sendSupplierEmail = async () => {
+    try {
+        const info = await transporter.sendMail(mailOptions);
+        console.log('✅ Email sent successfully:', info.response);
+    } catch (error) {
+        console.error('❌ ERROR:', error);
+    }
+};
+
 
   const handleButtonClick = async () => {
     try {
