@@ -91,6 +91,10 @@ export const WarehouseStock = () => {
   };
 
   const handleSave = async () => {
+    if (!id) return;
+    const locationId = parseInt(id, 10);
+    if (isNaN(locationId)) return;
+
     try {
       for (const item of stock) {
         const originalItem = originalStock.find(i => i.stock_id === item.stock_id);
@@ -128,14 +132,14 @@ export const WarehouseStock = () => {
           quantity,
           product:master_product(product_name)
         `)
-        .eq('location_id', id);
+        .eq('location_id', locationId);
 
       if (stockData) {
         const formattedStock = stockData.map(item => ({
           stock_id: item.stock_id,
           product_id: item.product_id,
           product_name: item.product.product_name,
-          quantity: item.quantity
+          quantity: item.quantity || 0
         }));
         setStock(formattedStock);
         setOriginalStock(formattedStock);
