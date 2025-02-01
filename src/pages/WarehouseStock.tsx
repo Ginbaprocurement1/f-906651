@@ -30,14 +30,11 @@ export const WarehouseStock = () => {
     const fetchWarehouseAndStock = async () => {
       if (!id) return;
 
-      const locationId = parseInt(id, 10);
-      if (isNaN(locationId)) return;
-
       // Fetch warehouse details
       const { data: warehouseData } = await supabase
         .from('master_suppliers_locations')
         .select('location_name, pickup_location_image')
-        .eq('pickup_location_id', locationId)
+        .eq('pickup_location_id', id)
         .single();
 
       if (warehouseData) {
@@ -53,14 +50,14 @@ export const WarehouseStock = () => {
           quantity,
           product:master_product(product_name)
         `)
-        .eq('location_id', locationId);
+        .eq('location_id', id);
 
       if (stockData) {
         const formattedStock = stockData.map(item => ({
           stock_id: item.stock_id,
           product_id: item.product_id,
           product_name: item.product.product_name,
-          quantity: item.quantity || 0
+          quantity: item.quantity
         }));
         setStock(formattedStock);
         setOriginalStock(formattedStock);
@@ -91,10 +88,6 @@ export const WarehouseStock = () => {
   };
 
   const handleSave = async () => {
-    if (!id) return;
-    const locationId = parseInt(id, 10);
-    if (isNaN(locationId)) return;
-
     try {
       for (const item of stock) {
         const originalItem = originalStock.find(i => i.stock_id === item.stock_id);
@@ -132,14 +125,14 @@ export const WarehouseStock = () => {
           quantity,
           product:master_product(product_name)
         `)
-        .eq('location_id', locationId);
+        .eq('location_id', id);
 
       if (stockData) {
         const formattedStock = stockData.map(item => ({
           stock_id: item.stock_id,
           product_id: item.product_id,
           product_name: item.product.product_name,
-          quantity: item.quantity || 0
+          quantity: item.quantity
         }));
         setStock(formattedStock);
         setOriginalStock(formattedStock);
