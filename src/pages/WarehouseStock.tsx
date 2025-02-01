@@ -30,7 +30,7 @@ const WarehouseStock = () => {
       const { data, error } = await supabase
         .from('master_suppliers_locations')
         .select('*')
-        .eq('pickup_location_id', warehouseId)
+        .eq('pickup_location_id', parseInt(warehouseId!, 10))
         .single();
       
       if (error) throw error;
@@ -49,7 +49,7 @@ const WarehouseStock = () => {
             product_name
           )
         `)
-        .eq('location_id', warehouseId);
+        .eq('location_id', parseInt(warehouseId!, 10));
       
       if (error) throw error;
       return data;
