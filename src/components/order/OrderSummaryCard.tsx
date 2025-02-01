@@ -4,17 +4,6 @@ import { supabase } from "@/integrations/supabase/client";
 import { CartItem } from "@/types/order";
 import { toast } from "@/components/ui/use-toast";
 import { format } from "date-fns";
-import dotenv from 'dotenv';
-import nodemailer from 'nodemailer';
-
-dotenv.config(); // Load environment variables
-
-// Load environment variables
-const GMAIL_USER = process.env.GMAIL_USER;
-const GMAIL_PASS = process.env.GMAIL_PASS;
-const EMAIL_TO = process.env.EMAIL_TO;
-const SMTP_HOST = process.env.SMTP_HOST || "smtp.gmail.com";
-const SMTP_PORT = process.env.SMTP_PORT || 587;
 
 interface OrderSummaryCardProps {
   subtotal: number;
@@ -230,48 +219,38 @@ export const OrderSummaryCard = ({
     }
   };
 
-  // Debugging: Check if credentials are loaded
-console.log("📌 GMAIL_USER:", GMAIL_USER);
-console.log("📌 GMAIL_PASS:", GMAIL_PASS ? "Loaded" : "Not Loaded");
-
-// Validate credentials
-if (!GMAIL_USER || !GMAIL_PASS) {
-    console.error("❌ ERROR: Gmail credentials not found in .env file!");
-    process.exit(1);
-}
-
-// Create email content
-const mailOptions = {
-    from: GMAIL_USER,
-    to: EMAIL_TO,
-    subject: "📨 Test Email - Ginba Procurement Partners",
-    text: "Hola"
-};
-
-// Create transporter using Gmail SMTP with TLS (port 587)
-const transporter = nodemailer.createTransport({
-    host: SMTP_HOST,
-    port: SMTP_PORT,
-    secure: false, // false because we're using STARTTLS
-    auth: {
-        user: GMAIL_USER,
-        pass: GMAIL_PASS
-    },
-    tls: {
-        rejectUnauthorized: false // Allow self-signed certificates (fixes some TLS errors)
-    }
-});
-
-// Function to send email
-const sendSupplierEmail = async () => {
+  const sendSupplierEmail = async (poId: string, supplier: string) => {
     try {
-        const info = await transporter.sendMail(mailOptions);
-        console.log('✅ Email sent successfully:', info.response);
-    } catch (error) {
-        console.error('❌ ERROR:', error);
-    }
-};
+      const { data: supplierData } = await supabase
+        .from('master_suppliers_company')
+        .select('supplier_email')
+        .eq('supplier_name', supplier)
+        .single();
 
+      if (!supplierData?.supplier_email) {
+        console.error('Supplier email not found for:', supplier);
+        return;
+      }
+
+      const { error } = await supabase.functions.invoke('send-order-email', {
+        body: {
+          supplier_name: supplier,
+          supplier_email: supplierData.supplier_email,
+          po_id: poId,
+        },
+      });
+
+      if (error) {
+        console.error('Error sending email:', error);
+        throw error;
+      }
+
+      console.log('Email sent successfully to supplier:', supplier);
+    } catch (error) {
+      console.error('Error in sendSupplierEmail:', error);
+      throw error;
+    }
+  };
 
   const handleButtonClick = async () => {
     try {
@@ -428,7 +407,7 @@ const sendSupplierEmail = async () => {
           }
 
           // Send email to supplier after PO creation
-          await sendSupplierEmails(poId, supplier);
+          await sendSupplierEmail(poId, supplier);
         }
 
         navigate('/');
