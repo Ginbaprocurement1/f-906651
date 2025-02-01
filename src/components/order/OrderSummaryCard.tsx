@@ -5,7 +5,6 @@ import { CartItem } from "@/types/order";
 import { toast } from "@/components/ui/use-toast";
 import { format } from "date-fns";
 
-
 interface OrderSummaryCardProps {
   subtotal: number;
   vat: number;
