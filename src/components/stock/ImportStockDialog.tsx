@@ -69,6 +69,15 @@ export const ImportStockDialog = ({ open, onOpenChange, supplierId }: ImportStoc
       const worksheet = workbook.Sheets[workbook.SheetNames[0]];
       const jsonData = XLSX.utils.sheet_to_json(worksheet);
 
+      // Get supplier name for product lookup
+      const { data: supplierData, error: supplierError } = await supabase
+        .from('master_suppliers_company')
+        .select('supplier_name')
+        .eq('supplier_id', supplierId)
+        .single();
+
+      if (supplierError) throw supplierError;
+
       // Get current stock data for comparison
       const { data: currentStock, error: stockError } = await supabase
         .from('supplier_stock')
@@ -100,6 +109,26 @@ export const ImportStockDialog = ({ open, onOpenChange, supplierId }: ImportStoc
         const key = `${row['Nombre del producto']}-${row['Almacén']}`;
         processedItems.add(key);
 
+        // Get product_id and location_id
+        const { data: productData } = await supabase
+          .from('master_product')
+          .select('product_id')
+          .eq('product_name', row['Nombre del producto'])
+          .eq('supplier_name', supplierData.supplier_name)
+          .single();
+
+        const { data: locationData } = await supabase
+          .from('master_suppliers_locations')
+          .select('pickup_location_id')
+          .eq('location_name', row['Almacén'])
+          .eq('supplier_id', supplierId)
+          .single();
+
+        if (!productData || !locationData) {
+          console.warn(`Skipping row: ${row['Nombre del producto']} - ${row['Almacén']}`);
+          continue;
+        }
+
         const currentItem = currentStockMap.get(key);
         if (currentItem) {
           // Update existing item
@@ -118,8 +147,19 @@ export const ImportStockDialog = ({ open, onOpenChange, supplierId }: ImportStoc
                 .eq('stock_id', currentItem.stock_id)
             );
           }
+        } else {
+          // Insert new item
+          updates.push(
+            supabase
+              .from('supplier_stock')
+              .insert({
+                supplier_id: supplierId,
+                location_id: locationData.pickup_location_id,
+                product_id: productData.product_id,
+                quantity: row['Cantidad']
+              })
+          );
         }
-        // New items would need additional logic to get product_id and location_id
       }
 
       // Delete items that are not in the new data

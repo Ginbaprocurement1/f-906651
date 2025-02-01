@@ -2,12 +2,13 @@ import { Header } from "@/components/Header";
 import { Footer } from "@/components/Footer";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { ArrowLeft } from "lucide-react";
+import { ArrowLeft, Plus } from "lucide-react";
 import { useNavigate, useParams } from "react-router-dom";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useState, useEffect } from "react";
 import { toast } from "@/components/ui/use-toast";
+import { AddProductDialog } from "@/components/stock/AddProductDialog";
 
 interface StockItem {
   stock_id: string;
@@ -22,7 +23,29 @@ const WarehouseStock = () => {
   const { warehouseId } = useParams();
   const [stockItems, setStockItems] = useState<StockItem[]>([]);
   const [hasChanges, setHasChanges] = useState(false);
+  const [showAddDialog, setShowAddDialog] = useState(false);
+  const [userSupplierId, setUserSupplierId] = useState<number | null>(null);
   const queryClient = useQueryClient();
+
+  // Fetch supplier ID for the current user
+  useQuery({
+    queryKey: ['currentUserSupplier'],
+    queryFn: async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (user) {
+        const { data: userData } = await supabase
+          .from('master_user')
+          .select('supplier_id')
+          .eq('id', user.id)
+          .single();
+        if (userData?.supplier_id) {
+          setUserSupplierId(userData.supplier_id);
+          return userData.supplier_id;
+        }
+      }
+      return null;
+    },
+  });
 
   const { data: warehouse } = useQuery({
     queryKey: ['warehouse', warehouseId],
@@ -141,15 +164,21 @@ const WarehouseStock = () => {
             Volver
           </Button>
 
-          <div className="flex items-start gap-6 mb-8">
-            <img
-              src={warehouse?.pickup_location_image || '/placeholder.svg'}
-              alt={warehouse?.location_name}
-              className="w-48 h-48 object-cover rounded-lg"
-            />
-            <div>
-              <h1 className="text-3xl font-bold mb-2">{warehouse?.location_name}</h1>
+          <div className="flex items-start justify-between gap-6 mb-8">
+            <div className="flex items-start gap-6">
+              <img
+                src={warehouse?.pickup_location_image || '/placeholder.svg'}
+                alt={warehouse?.location_name}
+                className="w-48 h-48 object-cover rounded-lg"
+              />
+              <div>
+                <h1 className="text-3xl font-bold mb-2">{warehouse?.location_name}</h1>
+              </div>
             </div>
+            <Button onClick={() => setShowAddDialog(true)}>
+              <Plus className="h-4 w-4 mr-2" />
+              Añadir producto
+            </Button>
           </div>
 
           <div className="bg-white rounded-lg shadow-md overflow-hidden">
@@ -190,6 +219,15 @@ const WarehouseStock = () => {
         </div>
       </main>
       <Footer />
+      
+      {userSupplierId && warehouseId && (
+        <AddProductDialog
+          open={showAddDialog}
+          onOpenChange={setShowAddDialog}
+          supplierId={userSupplierId}
+          warehouseId={parseInt(warehouseId, 10)}
+        />
+      )}
     </div>
   );
 };
