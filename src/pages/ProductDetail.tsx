@@ -117,7 +117,7 @@ const ProductDetail = () => {
             <img
               src={product.product_image_url || "/placeholder.svg"}
               alt={product.product_name}
-              className="w-60 h-60 object-cover rounded-lg"
+              className="w-full h-full object-cover rounded-lg"
             />
           </div>
 
