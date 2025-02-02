@@ -1,12 +1,12 @@
 import { Header } from "@/components/Header";
 import { Footer } from "@/components/Footer";
-import { useParams } from "react-router-dom";
+import { useParams, useNavigate } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useState } from "react";
-import { toast } from "@/components/ui/use-toast";
+import { toast } from "@/hooks/use-toast";
 import { useCartStore } from "@/stores/useCartStore";
 import {
   Accordion,
@@ -16,13 +16,15 @@ import {
 } from "@/components/ui/accordion";
 import { format } from "date-fns";
 import { es } from "date-fns/locale";
-import { Star, StarHalf } from "lucide-react";
+import { Star, StarHalf, ArrowLeft } from "lucide-react";
 import { StockTable } from "@/components/product/StockTable";
 
 const ProductDetail = () => {
   const { productId } = useParams();
   const [quantity, setQuantity] = useState(1);
   const { addToCart } = useCartStore();
+  const navigate = useNavigate();
+  const [userRole, setUserRole] = useState<string | null>(null);
 
   const { data: product, isLoading: isLoadingProduct } = useQuery({
     queryKey: ["product", productId],
@@ -52,6 +54,24 @@ const ProductDetail = () => {
     },
   });
 
+  // Fetch user role
+  useQuery({
+    queryKey: ["userRole"],
+    queryFn: async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (user) {
+        const { data: userData } = await supabase
+          .from('master_user')
+          .select('user_role')
+          .eq('id', user.id)
+          .single();
+        
+        setUserRole(userData?.user_role || null);
+      }
+      return null;
+    },
+  });
+
   const handleQuantityChange = (value: string) => {
     const num = parseInt(value);
     if (!isNaN(num) && num > 0) {
@@ -74,6 +94,42 @@ const ProductDetail = () => {
       description: `${quantity} ${quantity === 1 ? "unidad" : "unidades"} añadidas al carrito.`,
     });
     setQuantity(1);
+  };
+
+  const handleDelete = async () => {
+    if (!product?.product_id) return;
+
+    try {
+      const { error } = await supabase
+        .from('master_product')
+        .delete()
+        .eq('product_id', product.product_id);
+
+      if (error) throw error;
+
+      toast({
+        title: "Producto eliminado",
+        description: "El producto se ha eliminado correctamente",
+      });
+      
+      navigate(-1);
+    } catch (error) {
+      console.error('Error deleting product:', error);
+      toast({
+        variant: "destructive",
+        title: "Error",
+        description: "No se pudo eliminar el producto",
+      });
+    }
+  };
+
+  const handleEdit = () => {
+    // This should be implemented to match the edit functionality from ProductCard
+    // For now, we'll just show a toast
+    toast({
+      title: "Modificar producto",
+      description: "Funcionalidad en desarrollo",
+    });
   };
 
   if (isLoadingProduct || isLoadingReviews) {
@@ -112,12 +168,16 @@ const ProductDetail = () => {
     <div className="min-h-screen flex flex-col">
       <Header />
       <main className="flex-1 container mx-auto mt-32 mb-8">
+        <Button variant="ghost" onClick={() => navigate(-1)} className="mb-8">
+          <ArrowLeft className="h-4 w-4 mr-2" />
+          Volver
+        </Button>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
           {/* Product Image */}
           <div className="relative aspect-square">
             <img
-              src={product.product_image_url || "/placeholder.svg"}
-              alt={product.product_name}
+              src={product?.product_image_url || "/placeholder.svg"}
+              alt={product?.product_name}
               className="w-full h-full object-cover rounded-lg"
             />
           </div>
@@ -125,10 +185,10 @@ const ProductDetail = () => {
           {/* Product Info */}
           <div className="space-y-6">
             <h1 className="text-3xl font-bold text-gray-900">
-              {product.product_name}
+              {product?.product_name}
             </h1>
 
-            {product.manufacturer_logo && (
+            {product?.manufacturer_logo && (
               <img
                 src={product.manufacturer_logo}
                 alt="Manufacturer logo"
@@ -138,9 +198,9 @@ const ProductDetail = () => {
 
             <div className="space-y-2">
               <p className="text-lg text-gray-600">
-                Proveedor: {product.supplier_name}
+                Proveedor: {product?.supplier_name}
               </p>
-              {product.ref_supplier && (
+              {product?.ref_supplier && (
                 <p className="text-sm text-gray-500">
                   Ref: {product.ref_supplier}
                 </p>
@@ -148,45 +208,58 @@ const ProductDetail = () => {
             </div>
 
             <div className="text-xl font-semibold">
-              {product.price_without_vat} €/{product.product_uom}{" "}
+              {product?.price_without_vat} €/{product?.product_uom}{" "}
               <span className="text-gray-500 text-base">
-                (con IVA {product.price_with_vat} €/{product.product_uom})
+                (con IVA {product?.price_with_vat} €/{product?.product_uom})
               </span>
             </div>
 
-            <div className="flex items-center gap-4">
-              <Button
-                variant="outline"
-                size="icon"
-                onClick={() => handleQuantityChange(String(Math.max(1, quantity - 1)))}
-              >
-                -
-              </Button>
-              <Input
-                type="number"
-                value={quantity}
-                onChange={(e) => handleQuantityChange(e.target.value)}
-                className="w-20 text-center"
-                min="1"
-              />
-              <Button
-                variant="outline"
-                size="icon"
-                onClick={() => handleQuantityChange(String(quantity + 1))}
-              >
-                +
-              </Button>
-            </div>
+            {userRole === 'Supplier' ? (
+              <div className="flex gap-2">
+                <Button className="flex-1" onClick={handleEdit}>
+                  Modificar
+                </Button>
+                <Button variant="destructive" className="flex-1" onClick={handleDelete}>
+                  Eliminar
+                </Button>
+              </div>
+            ) : (
+              <>
+                <div className="flex items-center gap-4">
+                  <Button
+                    variant="outline"
+                    size="icon"
+                    onClick={() => handleQuantityChange(String(Math.max(1, quantity - 1)))}
+                  >
+                    -
+                  </Button>
+                  <Input
+                    type="number"
+                    value={quantity}
+                    onChange={(e) => handleQuantityChange(e.target.value)}
+                    className="w-20 text-center"
+                    min="1"
+                  />
+                  <Button
+                    variant="outline"
+                    size="icon"
+                    onClick={() => handleQuantityChange(String(quantity + 1))}
+                  >
+                    +
+                  </Button>
+                </div>
 
-            <Button onClick={handleAddToCart} className="w-full">
-              Añadir al carrito
-            </Button>
+                <Button onClick={handleAddToCart} className="w-full">
+                  Añadir al carrito
+                </Button>
+              </>
+            )}
 
             <div className="mt-6">
               <h3 className="text-lg font-semibold mb-2">Stock Disponible</h3>
               <StockTable 
                 productId={parseInt(productId as string)} 
-                supplierName={product.supplier_name}
+                supplierName={product?.supplier_name}
                 className="border rounded-lg"
               />
             </div>
