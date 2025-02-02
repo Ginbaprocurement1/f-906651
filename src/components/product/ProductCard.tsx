@@ -86,9 +86,12 @@ export const ProductCard = ({ product, userRole, onEdit, onDelete }: ProductCard
   }, [buttonRef]);
 
   const handleProductClick = (event: React.MouseEvent) => {
+    // Check if the click was on the Accordion or its children
+    const isAccordionClick = (event.target as HTMLElement).closest('[data-accordion-component]');
     if (
       buttonRef?.contains(event.target as Node) ||
-      dialogRef.current?.contains(event.target as Node)
+      dialogRef.current?.contains(event.target as Node) ||
+      isAccordionClick
     ) {
       return;
     }
@@ -151,7 +154,7 @@ export const ProductCard = ({ product, userRole, onEdit, onDelete }: ProductCard
           <p className="text-lg font-semibold mt-2 text-secondary">
             {product.price_without_vat?.toFixed(2)} € / {product.product_uom || "unit"}
           </p>
-          <Accordion type="single" collapsible className="w-full">
+          <Accordion type="single" collapsible className="w-full" data-accordion-component>
             <AccordionItem value="stock">
               <AccordionTrigger className="text-sm py-2">Stock</AccordionTrigger>
               <AccordionContent>
@@ -231,10 +234,10 @@ export const ProductCard = ({ product, userRole, onEdit, onDelete }: ProductCard
 
                 <div className="text-center space-y-1">
                   <p className="text-base font-semibold">
-                    {totalWithoutVAT.toFixed(2)} € sin IVA
+                    {(product.price_without_vat * quantity).toFixed(2)} € sin IVA
                   </p>
                   <p className="text-sm text-muted-foreground">
-                    {totalWithVAT.toFixed(2)} € IVA
+                    {(product.price_with_vat * quantity).toFixed(2)} € IVA
                   </p>
                 </div>
 
