@@ -158,7 +158,7 @@ export const ProductCard = ({ product, userRole, onEdit, onDelete }: ProductCard
           ) : (
             <Button className="w-full group hover:bg-secondary" onClick={handleAddToCart}>
               <ShoppingCart className="mr-2 h-4 w-4 group-hover:scale-110 transition-transform" />
-              Add to Cart
+              Añadir a carrito
             </Button>
           )}
 
