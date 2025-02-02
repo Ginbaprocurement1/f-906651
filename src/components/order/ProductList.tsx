@@ -8,6 +8,7 @@ import {
   AccordionTrigger,
 } from "@/components/ui/accordion";
 import { useNavigate } from "react-router-dom";
+import { StockTable } from "@/components/product/StockTable";
 
 interface ProductListProps {
   items: CartItem[];
@@ -37,7 +38,7 @@ export const ProductList = ({ items, onUpdateQuantity, onRemoveItem }: ProductLi
                       onClick={() => navigate(`/productos/${item.product_id}`)}
                     />
                   )}
-                  <div>
+                  <div className="flex-1">
                     <p 
                       className="font-bold cursor-pointer hover:text-primary"
                       onClick={() => navigate(`/productos/${item.product_id}`)}
@@ -72,6 +73,14 @@ export const ProductList = ({ items, onUpdateQuantity, onRemoveItem }: ProductLi
                         {item.price_with_vat}€ con IVA
                       </p>
                     </div>
+                  </div>
+                  <div className="ml-4 w-48">
+                    <p className="text-sm font-semibold mb-2">Stock Disponible</p>
+                    <StockTable 
+                      productId={item.product_id} 
+                      supplierName={item.supplier_name}
+                      className="border rounded-lg"
+                    />
                   </div>
                 </div>
                 <Button

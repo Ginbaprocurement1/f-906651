@@ -6,6 +6,13 @@ import { Input } from "@/components/ui/input";
 import { useCartStore } from "@/stores/useCartStore";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
+import {
+  Accordion,
+  AccordionContent,
+  AccordionItem,
+  AccordionTrigger,
+} from "@/components/ui/accordion";
+import { StockTable } from "./StockTable";
 
 interface Product {
   product_id: number;
@@ -144,6 +151,17 @@ export const ProductCard = ({ product, userRole, onEdit, onDelete }: ProductCard
           <p className="text-lg font-semibold mt-2 text-secondary">
             {product.price_without_vat?.toFixed(2)} € / {product.product_uom || "unit"}
           </p>
+          <Accordion type="single" collapsible className="w-full">
+            <AccordionItem value="stock">
+              <AccordionTrigger className="text-sm py-2">Stock</AccordionTrigger>
+              <AccordionContent>
+                <StockTable 
+                  productId={product.product_id} 
+                  supplierName={product.supplier_name}
+                />
+              </AccordionContent>
+            </AccordionItem>
+          </Accordion>
         </div>
         <div className="mt-4 relative">
           {userRole === 'Supplier' ? (

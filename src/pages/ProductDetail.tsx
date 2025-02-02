@@ -17,6 +17,7 @@ import {
 import { format } from "date-fns";
 import { es } from "date-fns/locale";
 import { Star, StarHalf } from "lucide-react";
+import { StockTable } from "@/components/product/StockTable";
 
 const ProductDetail = () => {
   const { productId } = useParams();
@@ -180,6 +181,15 @@ const ProductDetail = () => {
             <Button onClick={handleAddToCart} className="w-full">
               Añadir al carrito
             </Button>
+
+            <div className="mt-6">
+              <h3 className="text-lg font-semibold mb-2">Stock Disponible</h3>
+              <StockTable 
+                productId={parseInt(productId as string)} 
+                supplierName={product.supplier_name}
+                className="border rounded-lg"
+              />
+            </div>
           </div>
         </div>
 
