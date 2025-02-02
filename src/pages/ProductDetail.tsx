@@ -18,6 +18,7 @@ import { format } from "date-fns";
 import { es } from "date-fns/locale";
 import { Star, StarHalf, ArrowLeft } from "lucide-react";
 import { StockTable } from "@/components/product/StockTable";
+import { ProductFormDialog } from "@/components/product/ProductFormDialog";
 
 const ProductDetail = () => {
   const { productId } = useParams();
@@ -25,6 +26,8 @@ const ProductDetail = () => {
   const { addToCart } = useCartStore();
   const navigate = useNavigate();
   const [userRole, setUserRole] = useState<string | null>(null);
+  const [showProductForm, setShowProductForm] = useState(false);
+  const [supplierName, setSupplierName] = useState<string | null>(null);
 
   const { data: product, isLoading: isLoadingProduct } = useQuery({
     queryKey: ["product", productId],
@@ -62,11 +65,21 @@ const ProductDetail = () => {
       if (user) {
         const { data: userData } = await supabase
           .from('master_user')
-          .select('user_role')
+          .select('user_role, supplier_id')
           .eq('id', user.id)
           .single();
         
         setUserRole(userData?.user_role || null);
+
+        if (userData?.supplier_id) {
+          const { data: supplierData } = await supabase
+            .from('master_suppliers_company')
+            .select('supplier_name')
+            .eq('supplier_id', userData.supplier_id)
+            .single();
+          
+          setSupplierName(supplierData?.supplier_name || null);
+        }
       }
       return null;
     },
@@ -125,7 +138,7 @@ const ProductDetail = () => {
 
   const handleEdit = () => {
     if (!product) return;
-    onEdit?.(product);
+    setShowProductForm(true);
   };
 
   if (isLoadingProduct || isLoadingReviews) {
@@ -309,6 +322,20 @@ const ProductDetail = () => {
         </div>
       </main>
       <Footer />
+
+      {userRole === 'Supplier' && supplierName && (
+        <ProductFormDialog
+          open={showProductForm}
+          onOpenChange={setShowProductForm}
+          supplierName={supplierName}
+          onSuccess={() => {
+            setShowProductForm(false);
+            // Refresh the product data
+            window.location.reload();
+          }}
+          productToEdit={product}
+        />
+      )}
     </div>
   );
 };
