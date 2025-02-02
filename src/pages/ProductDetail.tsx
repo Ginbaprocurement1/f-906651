@@ -1,3 +1,4 @@
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Header } from "@/components/Header";
 import { Footer } from "@/components/Footer";
 import { useParams, useNavigate } from "react-router-dom";
@@ -57,7 +58,6 @@ const ProductDetail = () => {
     },
   });
 
-  // Fetch user role
   useQuery({
     queryKey: ["userRole"],
     queryFn: async () => {
@@ -113,6 +113,15 @@ const ProductDetail = () => {
     if (!product?.product_id) return;
 
     try {
+      // First, delete any cart items referencing this product
+      const { error: cartError } = await supabase
+        .from('cart_items')
+        .delete()
+        .eq('product_id', product.product_id);
+
+      if (cartError) throw cartError;
+
+      // Then delete the product
       const { error } = await supabase
         .from('master_product')
         .delete()
