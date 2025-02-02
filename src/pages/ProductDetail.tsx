@@ -124,12 +124,8 @@ const ProductDetail = () => {
   };
 
   const handleEdit = () => {
-    // This should be implemented to match the edit functionality from ProductCard
-    // For now, we'll just show a toast
-    toast({
-      title: "Modificar producto",
-      description: "Funcionalidad en desarrollo",
-    });
+    if (!product) return;
+    onEdit?.(product);
   };
 
   if (isLoadingProduct || isLoadingReviews) {

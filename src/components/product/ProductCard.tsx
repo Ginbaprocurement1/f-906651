@@ -55,6 +55,7 @@ export const ProductCard = ({ product, userRole, onEdit, onDelete }: ProductCard
   };
 
   const handleAddToCart = (event: React.MouseEvent<HTMLButtonElement>) => {
+    event.stopPropagation();
     setButtonRef(event.currentTarget);
     setIsDialogOpen(true);
   };
@@ -68,9 +69,6 @@ export const ProductCard = ({ product, userRole, onEdit, onDelete }: ProductCard
     });
     setQuantity(1);
   };
-
-  const totalWithoutVAT = product.price_without_vat * quantity;
-  const totalWithVAT = product.price_with_vat * quantity;
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
