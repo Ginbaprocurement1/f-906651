@@ -252,6 +252,31 @@ export const OrderSummaryCard = ({
     }
   };
 
+  const notifyWebhook = async (supplierId: number, poId: string) => {
+    try {
+      const { error } = await supabase.functions.invoke('notify-po-webhook', {
+        body: {
+          supplier_id: supplierId,
+          po_id: poId
+        }
+      });
+
+      if (error) {
+        console.error('Error notifying webhook:', error);
+        throw error;
+      }
+
+      console.log('Successfully notified webhook for PO:', poId);
+    } catch (error) {
+      console.error('Error in notifyWebhook:', error);
+      toast({
+        title: "Advertencia",
+        description: "Se creó el pedido pero hubo un error en la notificación",
+        variant: "destructive"
+      });
+    }
+  };
+
   const handleButtonClick = async () => {
     try {
       if (buttonLabel === "Tramitar pedido") {
@@ -405,6 +430,9 @@ export const OrderSummaryCard = ({
             console.error('Error creating PO lines:', linesError);
             throw linesError;
           }
+
+          // Notify webhook after successful PO creation
+          await notifyWebhook(supplierData.supplier_id, poId);
 
           // Send email to supplier after PO creation
           await sendSupplierEmail(poId, supplier);
