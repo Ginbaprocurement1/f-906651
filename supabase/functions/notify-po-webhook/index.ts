@@ -21,8 +21,8 @@ serve(async (req) => {
     const { supplier_id, po_id }: WebhookPayload = await req.json()
 
     // Initialize Supabase client
-    const supabaseUrl = Deno.env.get('SUPABASE_URL')!
-    const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
+    const supabaseUrl = Deno.env.get('eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InR2eXR5ZGd1aGJybmtjZmxobW53Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3MzMwNDcxNzIsImV4cCI6MjA0ODYyMzE3Mn0.4IY2Im2O6Yau8_k5S2_bFH3dMCq58Vgf_k-TWtzZoe0')!
+    const supabaseKey = Deno.env.get('eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InR2eXR5ZGd1aGJybmtjZmxobW53Iiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTczMzA0NzE3MiwiZXhwIjoyMDQ4NjIzMTcyfQ.A9cnJ65Gdl53YRCoe3aeD2huYTbD1UhgzQOWNhR68XU')!
     const supabase = createClient(supabaseUrl, supabaseKey)
 
     // Get supplier email
