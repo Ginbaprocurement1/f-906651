@@ -219,6 +219,39 @@ export const OrderSummaryCard = ({
     }
   };
 
+  const sendSupplierEmail = async (poId: string, supplier: string) => {
+    try {
+      const { data: supplierData } = await supabase
+        .from('master_suppliers_company')
+        .select('supplier_email')
+        .eq('supplier_name', supplier)
+        .single();
+
+      if (!supplierData?.supplier_email) {
+        console.error('Supplier email not found for:', supplier);
+        return;
+      }
+
+      const { error } = await supabase.functions.invoke('send-order-email', {
+        body: {
+          supplier_name: supplier,
+          supplier_email: supplierData.supplier_email,
+          po_id: poId,
+        },
+      });
+
+      if (error) {
+        console.error('Error sending email:', error);
+        throw error;
+      }
+
+      console.log('Email sent successfully to supplier:', supplier);
+    } catch (error) {
+      console.error('Error in sendSupplierEmail:', error);
+      throw error;
+    }
+  };
+
   const handleButtonClick = async () => {
     try {
       if (buttonLabel === "Tramitar pedido") {
@@ -372,6 +405,9 @@ export const OrderSummaryCard = ({
             console.error('Error creating PO lines:', linesError);
             throw linesError;
           }
+
+          // Send email to supplier after PO creation
+          await sendSupplierEmail(poId, supplier);
         }
 
         navigate('/');
