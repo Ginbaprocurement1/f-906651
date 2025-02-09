@@ -14,3 +14,4 @@ export interface Product {
   ref_supplier?: string;
   stock_demand_category?: string;
 }
+
