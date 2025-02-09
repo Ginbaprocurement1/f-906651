@@ -8,10 +8,9 @@ export interface Product {
   product_image_url: string;
   manufacturer: string;
   supplier_name: string;
-  supplier_id: number;  // Added this field
+  supplier_id: number;
   price_without_vat: number;
   price_with_vat: number;
   ref_supplier?: string;
   stock_demand_category?: string;
 }
-
