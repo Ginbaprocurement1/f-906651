@@ -49,7 +49,7 @@ export const WorkCenterSelect = () => {
 
   return (
     <Select
-      value={selectedLocation?.delivery_location_id.toString()}
+      value={selectedLocation?.delivery_location_id?.toString()}
       onValueChange={(value) => {
         const location = locations.find(
           (loc) => loc.delivery_location_id.toString() === value

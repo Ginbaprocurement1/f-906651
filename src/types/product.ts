@@ -1,3 +1,4 @@
+
 export interface Product {
   product_id: number;
   product_name: string;
@@ -7,6 +8,7 @@ export interface Product {
   product_image_url: string;
   manufacturer: string;
   supplier_name: string;
+  supplier_id: number;  // Added this field
   price_without_vat: number;
   price_with_vat: number;
   ref_supplier?: string;
