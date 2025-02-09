@@ -17,17 +17,7 @@ import { useWorkCenterStore } from "@/stores/useWorkCenterStore";
 import { useQuery } from "@tanstack/react-query";
 import { format } from "date-fns";
 import { es } from "date-fns/locale";
-
-interface Product {
-  product_id: number;
-  product_name: string;
-  product_image_url: string;
-  manufacturer: string;
-  supplier_name: string;
-  price_without_vat: number;
-  price_with_vat: number;
-  product_uom: string;
-}
+import { Product } from "@/types/product";
 
 interface ProductCardProps {
   product: Product;
