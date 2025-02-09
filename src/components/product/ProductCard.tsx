@@ -175,33 +175,41 @@ export const ProductCard = ({ product, userRole, onEdit, onDelete }: ProductCard
 
       // Get pickup time
       let pickupTime = "-";
-      const { data: sameProvinceStock } = await supabase
-        .from('supplier_stock')
-        .select(`
-          location_id,
-          quantity
-        `)
-        .eq('product_id', product.product_id)
-        .gt('quantity', 0)
-        .in('location_id', supabase
-          .from('master_suppliers_locations')
-          .select('pickup_location_id')
-          .eq('province_id', selectedLocation.province_id)
-        );
+      
+      // First get the pickup locations in the same province
+      const { data: pickupLocations } = await supabase
+        .from('master_suppliers_locations')
+        .select('pickup_location_id')
+        .eq('province_id', selectedLocation.province_id);
 
-      if (sameProvinceStock?.length) {
-        const firstLocation = sameProvinceStock[0];
-        const { data: pickupTimeData } = await supabase
-          .from('pickup_times')
-          .select('time_limit')
-          .eq('pickup_location_id', firstLocation.location_id)
-          .maybeSingle();
+      if (pickupLocations?.length) {
+        const locationIds = pickupLocations.map(loc => loc.pickup_location_id);
+        
+        // Then check stock at these locations
+        const { data: sameProvinceStock } = await supabase
+          .from('supplier_stock')
+          .select(`
+            location_id,
+            quantity
+          `)
+          .eq('product_id', product.product_id)
+          .gt('quantity', 0)
+          .in('location_id', locationIds);
 
-        if (pickupTimeData?.time_limit) {
-          const now = new Date();
-          // Convert time_limit string to a Date object set to today
-          const timeLimit = new Date(now.toDateString() + ' ' + pickupTimeData.time_limit);
-          pickupTime = now > timeLimit ? "Mañana" : "Hoy";
+        if (sameProvinceStock?.length) {
+          const firstLocation = sameProvinceStock[0];
+          const { data: pickupTimeData } = await supabase
+            .from('pickup_times')
+            .select('time_limit')
+            .eq('pickup_location_id', firstLocation.location_id)
+            .maybeSingle();
+
+          if (pickupTimeData?.time_limit) {
+            const now = new Date();
+            // Convert time_limit string to a Date object set to today
+            const timeLimit = new Date(now.toDateString() + ' ' + pickupTimeData.time_limit);
+            pickupTime = now > timeLimit ? "Mañana" : "Hoy";
+          }
         }
       }
 
