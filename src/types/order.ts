@@ -1,20 +1,23 @@
+
 export interface Location {
-  delivery_location_id: number;  // Changed from id to match DB schema
+  delivery_location_id: number;
   address: string | null;
   town: string | null;
   zip_code: string | null;
-  province: string | null;
+  province_id: string | null;  // Changed from province to province_id to match DB
   country: string | null;
   location_name: string | null;
+  company_id: number | null;
+  created_at?: string;
 }
 
 export interface SupplierLocation {
-  pickup_location_id: number;  // Changed from location_id to match DB schema
+  pickup_location_id: number;
   supplier_name: string;
   address: string | null;
   town: string | null;
   zip_code: number | null;
-  province: string | null;
+  province_id: string | null;  // Changed from province to province_id to match DB
   country: string | null;
 }
 
