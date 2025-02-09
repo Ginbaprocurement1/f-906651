@@ -1,3 +1,4 @@
+
 import { Header } from "@/components/Header";
 import { Footer } from "@/components/Footer";
 import { useEffect, useState } from "react";
@@ -40,7 +41,9 @@ const ProductList = () => {
       .eq('id', user.id)
       .single();
 
-    let query = supabase.from('master_product').select('*');
+    let query = supabase
+      .from('master_product')
+      .select('*, master_suppliers_company!inner(supplier_id)');
 
     // If user is a supplier, only show their products
     if (userData?.user_role === 'Supplier') {
@@ -68,8 +71,14 @@ const ProductList = () => {
     }
 
     if (data) {
-      setProducts(data);
-      let filtered = data;
+      // Transform the data to match the Product interface
+      const transformedData: Product[] = data.map(item => ({
+        ...item,
+        supplier_id: item.master_suppliers_company.supplier_id
+      }));
+
+      setProducts(transformedData);
+      let filtered = transformedData;
 
       if (categoryFromUrl) {
         filtered = filtered.filter(product => 

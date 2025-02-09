@@ -38,12 +38,15 @@ const ProductDetail = () => {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("master_product")
-        .select("*")
+        .select("*, master_suppliers_company!inner(supplier_id)")
         .eq("product_id", parseInt(productId as string))
         .single();
 
       if (error) throw error;
-      return data;
+      return {
+        ...data,
+        supplier_id: data.master_suppliers_company.supplier_id
+      };
     },
   });
 
