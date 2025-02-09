@@ -82,6 +82,45 @@ export type Database = {
           },
         ]
       }
+      delivery_province_distance: {
+        Row: {
+          created_at: string
+          distance_km: number | null
+          id: number
+          province_id_A: string | null
+          province_id_B: string | null
+        }
+        Insert: {
+          created_at?: string
+          distance_km?: number | null
+          id?: number
+          province_id_A?: string | null
+          province_id_B?: string | null
+        }
+        Update: {
+          created_at?: string
+          distance_km?: number | null
+          id?: number
+          province_id_A?: string | null
+          province_id_B?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "delivery_province_distance_province_id_A_fkey"
+            columns: ["province_id_A"]
+            isOneToOne: false
+            referencedRelation: "master_province"
+            referencedColumns: ["province_id"]
+          },
+          {
+            foreignKeyName: "delivery_province_distance_province_id_B_fkey"
+            columns: ["province_id_B"]
+            isOneToOne: false
+            referencedRelation: "master_province"
+            referencedColumns: ["province_id"]
+          },
+        ]
+      }
       delivery_times: {
         Row: {
           delivery_days: string | null
