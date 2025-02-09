@@ -82,6 +82,52 @@ export type Database = {
           },
         ]
       }
+      delivery_times: {
+        Row: {
+          delivery_days: string | null
+          id: number
+          province_id_a: string | null
+          province_id_b: string | null
+          supplier_id: number | null
+        }
+        Insert: {
+          delivery_days?: string | null
+          id?: number
+          province_id_a?: string | null
+          province_id_b?: string | null
+          supplier_id?: number | null
+        }
+        Update: {
+          delivery_days?: string | null
+          id?: number
+          province_id_a?: string | null
+          province_id_b?: string | null
+          supplier_id?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "delivery_times_province_id_a_fkey"
+            columns: ["province_id_a"]
+            isOneToOne: false
+            referencedRelation: "master_province"
+            referencedColumns: ["province_id"]
+          },
+          {
+            foreignKeyName: "delivery_times_province_id_b_fkey"
+            columns: ["province_id_b"]
+            isOneToOne: false
+            referencedRelation: "master_province"
+            referencedColumns: ["province_id"]
+          },
+          {
+            foreignKeyName: "delivery_times_supplier_id_fkey"
+            columns: ["supplier_id"]
+            isOneToOne: false
+            referencedRelation: "master_suppliers_company"
+            referencedColumns: ["supplier_id"]
+          },
+        ]
+      }
       email_messages: {
         Row: {
           body: string | null
@@ -362,7 +408,7 @@ export type Database = {
           created_at: string
           delivery_location_id: number
           location_name: string | null
-          province: string | null
+          province_id: string | null
           town: string | null
           zip_code: string | null
         }
@@ -373,7 +419,7 @@ export type Database = {
           created_at?: string
           delivery_location_id?: number
           location_name?: string | null
-          province?: string | null
+          province_id?: string | null
           town?: string | null
           zip_code?: string | null
         }
@@ -384,7 +430,7 @@ export type Database = {
           created_at?: string
           delivery_location_id?: number
           location_name?: string | null
-          province?: string | null
+          province_id?: string | null
           town?: string | null
           zip_code?: string | null
         }
@@ -395,6 +441,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "master_client_company"
             referencedColumns: ["company_id"]
+          },
+          {
+            foreignKeyName: "master_client_locations_province_id_fkey"
+            columns: ["province_id"]
+            isOneToOne: false
+            referencedRelation: "master_province"
+            referencedColumns: ["province_id"]
           },
         ]
       }
@@ -526,6 +579,21 @@ export type Database = {
         }
         Relationships: []
       }
+      master_province: {
+        Row: {
+          province: string | null
+          province_id: string
+        }
+        Insert: {
+          province?: string | null
+          province_id: string
+        }
+        Update: {
+          province?: string | null
+          province_id?: string
+        }
+        Relationships: []
+      }
       master_suppliers_company: {
         Row: {
           address: string | null
@@ -588,7 +656,7 @@ export type Database = {
           location_name: string | null
           pickup_location_id: number
           pickup_location_image: string | null
-          province: string | null
+          province_id: string | null
           supplier_id: number | null
           town: string | null
           zip_code: number | null
@@ -600,7 +668,7 @@ export type Database = {
           location_name?: string | null
           pickup_location_id?: number
           pickup_location_image?: string | null
-          province?: string | null
+          province_id?: string | null
           supplier_id?: number | null
           town?: string | null
           zip_code?: number | null
@@ -612,12 +680,19 @@ export type Database = {
           location_name?: string | null
           pickup_location_id?: number
           pickup_location_image?: string | null
-          province?: string | null
+          province_id?: string | null
           supplier_id?: number | null
           town?: string | null
           zip_code?: number | null
         }
         Relationships: [
+          {
+            foreignKeyName: "master_suppliers_locations_province_id_fkey"
+            columns: ["province_id"]
+            isOneToOne: false
+            referencedRelation: "master_province"
+            referencedColumns: ["province_id"]
+          },
           {
             foreignKeyName: "master_suppliers_locations_supplier_id_fkey"
             columns: ["supplier_id"]
@@ -752,6 +827,35 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "master_suppliers_company"
             referencedColumns: ["supplier_id"]
+          },
+        ]
+      }
+      pickup_times: {
+        Row: {
+          created_at: string
+          id: number
+          pickup_location_id: number | null
+          time_limit: string | null
+        }
+        Insert: {
+          created_at?: string
+          id?: number
+          pickup_location_id?: number | null
+          time_limit?: string | null
+        }
+        Update: {
+          created_at?: string
+          id?: number
+          pickup_location_id?: number | null
+          time_limit?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "pickup_times_pickup_location_id_fkey"
+            columns: ["pickup_location_id"]
+            isOneToOne: false
+            referencedRelation: "master_suppliers_locations"
+            referencedColumns: ["pickup_location_id"]
           },
         ]
       }
@@ -1117,13 +1221,165 @@ export type Database = {
       }
     }
     Functions: {
-      [_ in never]: never
+      bytea_to_text: {
+        Args: {
+          data: string
+        }
+        Returns: string
+      }
+      http: {
+        Args: {
+          request: Database["public"]["CompositeTypes"]["http_request"]
+        }
+        Returns: Database["public"]["CompositeTypes"]["http_response"]
+      }
+      http_delete:
+        | {
+            Args: {
+              uri: string
+            }
+            Returns: Database["public"]["CompositeTypes"]["http_response"]
+          }
+        | {
+            Args: {
+              uri: string
+              content: string
+              content_type: string
+            }
+            Returns: Database["public"]["CompositeTypes"]["http_response"]
+          }
+      http_get:
+        | {
+            Args: {
+              uri: string
+            }
+            Returns: Database["public"]["CompositeTypes"]["http_response"]
+          }
+        | {
+            Args: {
+              uri: string
+              data: Json
+            }
+            Returns: Database["public"]["CompositeTypes"]["http_response"]
+          }
+      http_head: {
+        Args: {
+          uri: string
+        }
+        Returns: Database["public"]["CompositeTypes"]["http_response"]
+      }
+      http_header: {
+        Args: {
+          field: string
+          value: string
+        }
+        Returns: Database["public"]["CompositeTypes"]["http_header"]
+      }
+      http_list_curlopt: {
+        Args: Record<PropertyKey, never>
+        Returns: {
+          curlopt: string
+          value: string
+        }[]
+      }
+      http_patch: {
+        Args: {
+          uri: string
+          content: string
+          content_type: string
+        }
+        Returns: Database["public"]["CompositeTypes"]["http_response"]
+      }
+      http_post:
+        | {
+            Args: {
+              uri: string
+              content: string
+              content_type: string
+            }
+            Returns: Database["public"]["CompositeTypes"]["http_response"]
+          }
+        | {
+            Args: {
+              uri: string
+              data: Json
+            }
+            Returns: Database["public"]["CompositeTypes"]["http_response"]
+          }
+        | {
+            Args: {
+              uri: string
+              data: Json
+              content_type: string
+            }
+            Returns: Database["public"]["CompositeTypes"]["http_response"]
+          }
+      http_put: {
+        Args: {
+          uri: string
+          content: string
+          content_type: string
+        }
+        Returns: Database["public"]["CompositeTypes"]["http_response"]
+      }
+      http_reset_curlopt: {
+        Args: Record<PropertyKey, never>
+        Returns: boolean
+      }
+      http_set_curlopt: {
+        Args: {
+          curlopt: string
+          value: string
+        }
+        Returns: boolean
+      }
+      text_to_bytea: {
+        Args: {
+          data: string
+        }
+        Returns: string
+      }
+      urlencode:
+        | {
+            Args: {
+              data: Json
+            }
+            Returns: string
+          }
+        | {
+            Args: {
+              string: string
+            }
+            Returns: string
+          }
+        | {
+            Args: {
+              string: string
+            }
+            Returns: string
+          }
     }
     Enums: {
       [_ in never]: never
     }
     CompositeTypes: {
-      [_ in never]: never
+      http_header: {
+        field: string | null
+        value: string | null
+      }
+      http_request: {
+        method: unknown | null
+        uri: string | null
+        headers: Database["public"]["CompositeTypes"]["http_header"][] | null
+        content_type: string | null
+        content: string | null
+      }
+      http_response: {
+        status: number | null
+        content_type: string | null
+        headers: Database["public"]["CompositeTypes"]["http_header"][] | null
+        content: string | null
+      }
     }
   }
 }
