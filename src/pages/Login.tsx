@@ -23,13 +23,9 @@ const Login = () => {
     const {
       data: { subscription },
     } = supabase.auth.onAuthStateChange(async (event, session) => {
-      if (event === "SIGNED_IN") {
+      if (session) {
         navigate("/");
-      } else if (event === "SIGNED_OUT") {
-        navigate("/login");
-      } else if (event === "USER_UPDATED") {
-        navigate("/");
-      } else if (event === "USER_DELETED") {
+      } else {
         navigate("/login");
       }
     });
@@ -74,13 +70,6 @@ const Login = () => {
           }}
           providers={["google"]}
           redirectTo={window.location.origin}
-          onError={(error) => {
-            toast({
-              variant: "destructive",
-              title: "Authentication Error",
-              description: error.message,
-            });
-          }}
         />
       </div>
     </div>
