@@ -13,6 +13,10 @@ import {
   AccordionTrigger,
 } from "@/components/ui/accordion";
 import { StockTable } from "./StockTable";
+import { useWorkCenterStore } from "@/stores/useWorkCenterStore";
+import { useQuery } from "@tanstack/react-query";
+import { format } from "date-fns";
+import { es } from "date-fns/locale";
 
 interface Product {
   product_id: number;
@@ -39,6 +43,7 @@ export const ProductCard = ({ product, userRole, onEdit, onDelete }: ProductCard
   const dialogRef = useRef<HTMLDivElement | null>(null);
   const { addToCart } = useCartStore();
   const navigate = useNavigate();
+  const { selectedLocation } = useWorkCenterStore();
 
   const handleQuantityChange = (value: string) => {
     const num = parseInt(value);
@@ -84,7 +89,6 @@ export const ProductCard = ({ product, userRole, onEdit, onDelete }: ProductCard
   }, [buttonRef]);
 
   const handleProductClick = (event: React.MouseEvent) => {
-    // Check if the click was on the Accordion or its children
     const isAccordionClick = (event.target as HTMLElement).closest('[data-accordion-component]');
     if (
       buttonRef?.contains(event.target as Node) ||
@@ -129,6 +133,58 @@ export const ProductCard = ({ product, userRole, onEdit, onDelete }: ProductCard
     onEdit?.(product);
   };
 
+  const { data: deliveryInfo } = useQuery({
+    queryKey: ["delivery-info", product.product_id, selectedLocation?.delivery_location_id],
+    enabled: !!selectedLocation && userRole === 'Client',
+    queryFn: async () => {
+      const { data: stockData } = await supabase
+        .from('supplier_stock')
+        .select(`
+          quantity,
+          location_id,
+          master_suppliers_locations!inner (
+            province_id
+          )
+        `)
+        .eq('product_id', product.product_id)
+        .gt('quantity', 0)
+        .order('quantity', { ascending: false });
+
+      if (!stockData?.length) return { deliveryDays: "-", pickupTime: "-" };
+
+      const firstLocation = stockData[0];
+      const destinationProvinceId = selectedLocation?.province_id;
+      const sourceProvinceId = firstLocation.master_suppliers_locations.province_id;
+
+      const { data: deliveryTimes } = await supabase
+        .from('delivery_times')
+        .select('delivery_days')
+        .eq('supplier_id', product.supplier_id)
+        .or(`and(province_id_a.eq.${destinationProvinceId},province_id_b.eq.${sourceProvinceId}),and(province_id_a.eq.${sourceProvinceId},province_id_b.eq.${destinationProvinceId})`)
+        .maybeSingle();
+
+      let pickupTime = "-";
+      if (destinationProvinceId === sourceProvinceId) {
+        const { data: pickupTimeData } = await supabase
+          .from('pickup_times')
+          .select('time_limit')
+          .eq('pickup_location_id', firstLocation.location_id)
+          .maybeSingle();
+
+        if (pickupTimeData?.time_limit) {
+          const now = new Date();
+          const timeLimit = new Date(now.toDateString() + ' ' + pickupTimeData.time_limit);
+          pickupTime = now < timeLimit ? "Hoy" : "Mañana";
+        }
+      }
+
+      return {
+        deliveryDays: deliveryTimes?.delivery_days || "-",
+        pickupTime
+      };
+    }
+  });
+
   return (
     <div 
       className="bg-white rounded-lg shadow-md overflow-hidden hover:shadow-lg transition-shadow duration-300 flex flex-col relative cursor-pointer" 
@@ -152,6 +208,12 @@ export const ProductCard = ({ product, userRole, onEdit, onDelete }: ProductCard
           <p className="text-lg font-semibold mt-2 text-secondary">
             {product.price_without_vat?.toFixed(2)} € / {product.product_uom || "unit"}
           </p>
+          {userRole === 'Client' && (
+            <div className="text-sm text-gray-600 mt-2">
+              <p>Tiempo de entrega: {deliveryInfo?.deliveryDays}</p>
+              <p>Tiempo de recogida: {deliveryInfo?.pickupTime}</p>
+            </div>
+          )}
           <Accordion type="single" collapsible className="w-full" data-accordion-component>
             <AccordionItem value="stock">
               <AccordionTrigger className="text-sm py-2">Stock</AccordionTrigger>

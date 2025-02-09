@@ -20,6 +20,8 @@ import { es } from "date-fns/locale";
 import { Star, StarHalf, ArrowLeft } from "lucide-react";
 import { StockTable } from "@/components/product/StockTable";
 import { ProductFormDialog } from "@/components/product/ProductFormDialog";
+import { WorkCenterSelect } from "@/components/WorkCenterSelect";
+import { useWorkCenterStore } from "@/stores/useWorkCenterStore";
 
 const ProductDetail = () => {
   const { productId } = useParams();
@@ -29,6 +31,7 @@ const ProductDetail = () => {
   const [userRole, setUserRole] = useState<string | null>(null);
   const [showProductForm, setShowProductForm] = useState(false);
   const [supplierName, setSupplierName] = useState<string | null>(null);
+  const { selectedLocation } = useWorkCenterStore();
 
   const { data: product, isLoading: isLoadingProduct } = useQuery({
     queryKey: ["product", productId],
@@ -150,6 +153,60 @@ const ProductDetail = () => {
     setShowProductForm(true);
   };
 
+  const { data: deliveryInfo } = useQuery({
+    queryKey: ["delivery-info", productId, selectedLocation?.delivery_location_id],
+    enabled: !!selectedLocation && userRole === 'Client',
+    queryFn: async () => {
+      // Get stock locations ordered by distance
+      const { data: stockData } = await supabase
+        .from('supplier_stock')
+        .select(`
+          quantity,
+          location_id,
+          master_suppliers_locations!inner (
+            province_id
+          )
+        `)
+        .eq('product_id', parseInt(productId as string))
+        .gt('quantity', 0)
+        .order('quantity', { ascending: false });
+
+      if (!stockData?.length) return { deliveryDays: "-", pickupTime: "-" };
+
+      const firstLocation = stockData[0];
+      const destinationProvinceId = selectedLocation?.province_id;
+      const sourceProvinceId = firstLocation.master_suppliers_locations.province_id;
+
+      // Get delivery time
+      const { data: deliveryTimes } = await supabase
+        .from('delivery_times')
+        .select('delivery_days')
+        .eq('supplier_id', product?.supplier_id)
+        .or(`and(province_id_a.eq.${destinationProvinceId},province_id_b.eq.${sourceProvinceId}),and(province_id_a.eq.${sourceProvinceId},province_id_b.eq.${destinationProvinceId})`)
+        .maybeSingle();
+
+      let pickupTime = "-";
+      if (destinationProvinceId === sourceProvinceId) {
+        const { data: pickupTimeData } = await supabase
+          .from('pickup_times')
+          .select('time_limit')
+          .eq('pickup_location_id', firstLocation.location_id)
+          .maybeSingle();
+
+        if (pickupTimeData?.time_limit) {
+          const now = new Date();
+          const timeLimit = new Date(now.toDateString() + ' ' + pickupTimeData.time_limit);
+          pickupTime = now < timeLimit ? "Hoy" : "Mañana";
+        }
+      }
+
+      return {
+        deliveryDays: deliveryTimes?.delivery_days || "-",
+        pickupTime
+      };
+    }
+  });
+
   if (isLoadingProduct || isLoadingReviews) {
     return (
       <div className="min-h-screen flex flex-col">
@@ -186,10 +243,13 @@ const ProductDetail = () => {
     <div className="min-h-screen flex flex-col">
       <Header />
       <main className="flex-1 container mx-auto mt-32 mb-8">
-        <Button variant="ghost" onClick={() => navigate(-1)} className="mb-8">
-          <ArrowLeft className="h-4 w-4 mr-2" />
-          Volver
-        </Button>
+        <div className="flex justify-between items-center mb-8">
+          <Button variant="ghost" onClick={() => navigate(-1)}>
+            <ArrowLeft className="h-4 w-4 mr-2" />
+            Volver
+          </Button>
+          {userRole === 'Client' && <WorkCenterSelect />}
+        </div>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
           {/* Product Image */}
           <div className="relative aspect-square">
@@ -272,6 +332,12 @@ const ProductDetail = () => {
                 </Button>
               </>
             )}
+        {userRole === 'Client' && (
+          <div className="text-sm text-gray-600 mt-4">
+            <p>Tiempo de entrega: {deliveryInfo?.deliveryDays}</p>
+            <p>Tiempo de recogida: {deliveryInfo?.pickupTime}</p>
+          </div>
+        )}
 
             <div className="mt-6">
               <h3 className="text-lg font-semibold mb-2">Stock Disponible</h3>

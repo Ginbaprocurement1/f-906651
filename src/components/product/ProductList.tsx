@@ -11,6 +11,7 @@ import { ArrowLeft, Plus, Upload } from "lucide-react";
 import { ProductFormDialog } from "@/components/product/ProductFormDialog";
 import { ImportCatalogDialog } from "@/components/product/ImportCatalogDialog";
 import { Product } from "@/types/product";
+import { WorkCenterSelect } from "@/components/WorkCenterSelect";
 
 const ProductList = () => {
   const [products, setProducts] = useState<Product[]>([]);
@@ -154,30 +155,39 @@ const ProductList = () => {
       <Header />
       <main className="flex-1 container mx-auto mt-32 mb-8">
         <div className="mb-8">
-          {userRole === 'Supplier' && (
-            <div className="flex justify-between items-center mb-4">
-              <Button variant="ghost" onClick={() => navigate(-1)}>
-                <ArrowLeft className="h-4 w-4 mr-2" />
-                Volver
-              </Button>
-              <h1 className="text-3xl font-bold text-left">
-                {searchFromUrl ? "Búsqueda de productos" : (categoryFromUrl || "Mis Productos")}
-              </h1>
-              <div className="flex gap-4">
-                <Button onClick={() => {
-                  setProductToEdit(null);
-                  setShowProductForm(true);
-                }}>
-                  <Plus className="h-4 w-4 mr-2" />
-                  Añadir nuevo producto
+          <div className="flex justify-between items-center mb-4">
+            {userRole === 'Supplier' ? (
+              <>
+                <Button variant="ghost" onClick={() => navigate(-1)}>
+                  <ArrowLeft className="h-4 w-4 mr-2" />
+                  Volver
                 </Button>
-                <Button variant="outline" onClick={() => setShowImportDialog(true)}>
-                  <Upload className="h-4 w-4 mr-2" />
-                  Importar catálogo desde plantilla
-                </Button>
-              </div>
-            </div>
-          )}
+                <h1 className="text-3xl font-bold text-left">
+                  {searchFromUrl ? "Búsqueda de productos" : (categoryFromUrl || "Mis Productos")}
+                </h1>
+                <div className="flex gap-4">
+                  <Button onClick={() => {
+                    setProductToEdit(null);
+                    setShowProductForm(true);
+                  }}>
+                    <Plus className="h-4 w-4 mr-2" />
+                    Añadir nuevo producto
+                  </Button>
+                  <Button variant="outline" onClick={() => setShowImportDialog(true)}>
+                    <Upload className="h-4 w-4 mr-2" />
+                    Importar catálogo desde plantilla
+                  </Button>
+                </div>
+              </>
+            ) : (
+              <>
+                <h1 className="text-3xl font-bold">
+                  {searchFromUrl ? "Búsqueda de productos" : (categoryFromUrl || "Productos")}
+                </h1>
+                {userRole === 'Client' && <WorkCenterSelect />}
+              </>
+            )}
+          </div>
         </div>
 
         <div className="grid grid-cols-12 gap-6">
