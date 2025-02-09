@@ -161,11 +161,13 @@ export const ProductCard = ({ product, userRole, onEdit, onDelete }: ProductCard
         })
       );
 
-      // Sort by distance
+      // Sort by distance and ensure we have a valid nearest location
       stockWithDistances.sort((a, b) => (a.distance || Infinity) - (b.distance || Infinity));
       const nearestStock = stockWithDistances[0];
 
-      // Get delivery time
+      if (!nearestStock) return { deliveryDays: "-", pickupTime: "-" };
+
+      // Get delivery time using the nearest location's province
       const { data: deliveryTimes } = await supabase
         .from('delivery_times')
         .select('delivery_days')
@@ -173,10 +175,10 @@ export const ProductCard = ({ product, userRole, onEdit, onDelete }: ProductCard
         .or(`and(province_id_a.eq.${selectedLocation.province_id},province_id_b.eq.${nearestStock.master_suppliers_locations.province_id}),and(province_id_a.eq.${nearestStock.master_suppliers_locations.province_id},province_id_b.eq.${selectedLocation.province_id})`)
         .maybeSingle();
 
-      // Get pickup time
+      // Get pickup time only for locations in the same province
       let pickupTime = "-";
       
-      // First get the pickup locations in the same province
+      // Get pickup locations in the same province as the selected location
       const { data: pickupLocations } = await supabase
         .from('master_suppliers_locations')
         .select('pickup_location_id')
@@ -185,7 +187,7 @@ export const ProductCard = ({ product, userRole, onEdit, onDelete }: ProductCard
       if (pickupLocations?.length) {
         const locationIds = pickupLocations.map(loc => loc.pickup_location_id);
         
-        // Then check stock at these locations
+        // Check stock at these locations and sort by quantity
         const { data: sameProvinceStock } = await supabase
           .from('supplier_stock')
           .select(`
@@ -194,19 +196,20 @@ export const ProductCard = ({ product, userRole, onEdit, onDelete }: ProductCard
           `)
           .eq('product_id', product.product_id)
           .gt('quantity', 0)
-          .in('location_id', locationIds);
+          .in('location_id', locationIds)
+          .order('quantity', { ascending: false });
 
         if (sameProvinceStock?.length) {
-          const firstLocation = sameProvinceStock[0];
+          // Use the location with the highest stock
+          const bestLocation = sameProvinceStock[0];
           const { data: pickupTimeData } = await supabase
             .from('pickup_times')
             .select('time_limit')
-            .eq('pickup_location_id', firstLocation.location_id)
+            .eq('pickup_location_id', bestLocation.location_id)
             .maybeSingle();
 
           if (pickupTimeData?.time_limit) {
             const now = new Date();
-            // Convert time_limit string to a Date object set to today
             const timeLimit = new Date(now.toDateString() + ' ' + pickupTimeData.time_limit);
             pickupTime = now > timeLimit ? "Mañana" : "Hoy";
           }
@@ -352,3 +355,4 @@ export const ProductCard = ({ product, userRole, onEdit, onDelete }: ProductCard
     </div>
   );
 };
+
