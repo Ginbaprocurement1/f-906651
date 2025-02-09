@@ -152,7 +152,7 @@ export const ProductCard = ({ product, userRole, onEdit, onDelete }: ProductCard
             .from('delivery_province_distance')
             .select('distance_km')
             .or(`and(province_id_A.eq.${selectedLocation.province_id},province_id_B.eq.${stock.master_suppliers_locations.province_id}),and(province_id_A.eq.${stock.master_suppliers_locations.province_id},province_id_B.eq.${selectedLocation.province_id})`)
-            .single();
+            .maybeSingle();
 
           return {
             ...stock,
@@ -162,7 +162,7 @@ export const ProductCard = ({ product, userRole, onEdit, onDelete }: ProductCard
       );
 
       // Sort by distance
-      stockWithDistances.sort((a, b) => a.distance - b.distance);
+      stockWithDistances.sort((a, b) => (a.distance || Infinity) - (b.distance || Infinity));
       const nearestStock = stockWithDistances[0];
 
       // Get delivery time
