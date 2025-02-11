@@ -160,6 +160,31 @@ export const ProductCard = ({ product, userRole, onEdit, onDelete }: ProductCard
           return { deliveryDays: "-", pickupTime: "-" };
         }
 
+        const sameProvinceLocation = stockLocations.find(
+          location => location.master_suppliers_locations.province_id === destinationProvinceId
+        );
+
+        if (sameProvinceLocation) {
+          const sourceProvinceId = destinationProvinceId;
+
+          if (product.supplier_id) {
+            const { data: deliveryTimeData } = await supabase
+              .from('delivery_times')
+              .select('delivery_days')
+              .eq('supplier_id', product.supplier_id)
+              .eq('province_id_a', sourceProvinceId)
+              .eq('province_id_b', destinationProvinceId)
+              .maybeSingle();
+
+            if (deliveryTimeData?.delivery_days) {
+              return {
+                deliveryDays: deliveryTimeData.delivery_days,
+                pickupTime: "-" // We'll calculate this later
+              };
+            }
+          }
+        }
+
         const locationsWithDistances = await Promise.all(
           stockLocations.map(async (stock) => {
             const { data: distanceData } = await supabase
