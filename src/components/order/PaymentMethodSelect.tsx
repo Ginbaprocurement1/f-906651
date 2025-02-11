@@ -23,7 +23,7 @@ export const PaymentMethodSelect = ({ defaultValue, onValueChange }: PaymentMeth
         defaultValue={defaultValue}
       >
         <SelectTrigger>
-          <SelectValue placeholder="Seleccionar método" />
+          <SelectValue placeholder="Seleccionar método de pago" />
         </SelectTrigger>
         <SelectContent>
           {PAYMENT_METHODS.map((method) => (
