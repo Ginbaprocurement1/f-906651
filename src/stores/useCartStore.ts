@@ -1,3 +1,4 @@
+
 import { create } from 'zustand';
 import { supabase } from "@/integrations/supabase/client";
 import { CartItem } from '@/types/order';
@@ -57,8 +58,8 @@ export const useCartStore = create<CartStore>((set, get) => ({
       const formattedItems = cartItems.map(item => ({
         id: Number(item.id),
         quantity: item.quantity,
-        delivery_method: item.delivery_method || 'Envío',
-        payment_method: item.payment_method || 'Pago inmediato',
+        delivery_method: item.delivery_method || undefined,
+        payment_method: item.payment_method || undefined,
         delivery_location_id: item.delivery_location_id,
         pickup_location_id: item.pickup_location_id,
         custom_address: item.custom_address || null,
@@ -87,19 +88,35 @@ export const useCartStore = create<CartStore>((set, get) => ({
 
   addToCart: async (product, quantity) => {
     try {
-      const { data, error } = await supabase
+      // First check if the product already exists in the cart
+      const { data: existingItem } = await supabase
         .from('cart_items')
-        .upsert({
-          product_id: product.product_id,
-          quantity,
-          user_id: (await supabase.auth.getUser()).data.user?.id,
-        }, {
-          onConflict: 'user_id,product_id'
-        })
-        .select()
-        .single();
+        .select('id, quantity')
+        .eq('product_id', product.product_id)
+        .eq('user_id', (await supabase.auth.getUser()).data.user?.id)
+        .maybeSingle();
 
-      if (error) throw error;
+      if (existingItem) {
+        // If it exists, update by adding the quantities
+        const newQuantity = existingItem.quantity + quantity;
+        const { error } = await supabase
+          .from('cart_items')
+          .update({ quantity: newQuantity })
+          .eq('id', existingItem.id);
+
+        if (error) throw error;
+      } else {
+        // If it doesn't exist, insert new item without delivery and payment methods
+        const { error } = await supabase
+          .from('cart_items')
+          .insert({
+            product_id: product.product_id,
+            quantity,
+            user_id: (await supabase.auth.getUser()).data.user?.id,
+          });
+
+        if (error) throw error;
+      }
 
       // Refresh cart items
       get().fetchCartItems();
