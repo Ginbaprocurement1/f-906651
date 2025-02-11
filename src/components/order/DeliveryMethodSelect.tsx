@@ -17,7 +17,7 @@ export const DeliveryMethodSelect = ({ defaultValue, onValueChange }: DeliveryMe
         defaultValue={defaultValue}
       >
         <SelectTrigger>
-          <SelectValue placeholder="Seleccionar método" />
+          <SelectValue placeholder="Seleccionar método de envío" />
         </SelectTrigger>
         <SelectContent>
           <SelectItem value="Envío">Envío</SelectItem>
