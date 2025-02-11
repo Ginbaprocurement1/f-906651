@@ -177,6 +177,9 @@ const ProductDetail = () => {
 
         const destinationProvinceId = locationData.province_id;
 
+        // Calculate Delivery Time
+        let deliveryDays = "-";
+
         // Step 2: Get all stock locations with their distances
         const { data: stockLocations, error: stockError } = await supabase
           .from('supplier_stock')
@@ -190,22 +193,17 @@ const ProductDetail = () => {
           .eq('product_id', parseInt(productId as string))
           .gt('quantity', 0);
 
-        if (stockError || !stockLocations?.length) {
-          console.error('Error getting stock locations:', stockError);
-          return { deliveryDays: "-", pickupTime: "-" };
-        }
+        if (!stockError && stockLocations?.length) {
+          // First check if there's stock in the same province
+          const sameProvinceLocation = stockLocations.find(
+            location => location.master_suppliers_locations.province_id === destinationProvinceId
+          );
 
-        // First check if there's stock in the same province
-        const sameProvinceLocation = stockLocations.find(
-          location => location.master_suppliers_locations.province_id === destinationProvinceId
-        );
+          if (sameProvinceLocation && product?.supplier_id) {
+            // If there's stock in the same province, use that location
+            const sourceProvinceId = destinationProvinceId;
 
-        if (sameProvinceLocation) {
-          // If there's stock in the same province, use that location
-          const sourceProvinceId = destinationProvinceId;
-
-          // Get delivery time for same province
-          if (product?.supplier_id) {
+            // Get delivery time for same province
             const { data: deliveryTimeData } = await supabase
               .from('delivery_times')
               .select('delivery_days')
@@ -215,54 +213,48 @@ const ProductDetail = () => {
               .maybeSingle();
 
             if (deliveryTimeData?.delivery_days) {
-              return {
-                deliveryDays: deliveryTimeData.delivery_days
-              };
+              deliveryDays = deliveryTimeData.delivery_days;
+            }
+          }
+
+          // If no delivery time found for same province, proceed with distance calculation
+          if (deliveryDays === "-") {
+            const locationsWithDistances = await Promise.all(
+              stockLocations.map(async (stock) => {
+                const { data: distanceData } = await supabase
+                  .from('delivery_province_distance')
+                  .select('distance_km')
+                  .or(`and(province_id_A.eq.${destinationProvinceId},province_id_B.eq.${stock.master_suppliers_locations.province_id}),and(province_id_A.eq.${stock.master_suppliers_locations.province_id},province_id_B.eq.${destinationProvinceId})`)
+                  .maybeSingle();
+
+                return {
+                  ...stock,
+                  distance: distanceData?.distance_km || Infinity
+                };
+              })
+            );
+
+            // Sort locations by distance
+            locationsWithDistances.sort((a, b) => (a.distance || Infinity) - (b.distance || Infinity));
+
+            // Get the province_id of the closest location
+            const closestLocation = locationsWithDistances[0];
+            if (closestLocation && product?.supplier_id) {
+              const sourceProvinceId = closestLocation.master_suppliers_locations.province_id;
+
+              const { data: deliveryTimeData } = await supabase
+                .from('delivery_times')
+                .select('delivery_days')
+                .eq('supplier_id', product.supplier_id)
+                .or(`and(province_id_a.eq.${destinationProvinceId},province_id_b.eq.${sourceProvinceId}),and(province_id_a.eq.${sourceProvinceId},province_id_b.eq.${destinationProvinceId})`)
+                .maybeSingle();
+
+              deliveryDays = deliveryTimeData?.delivery_days || "-";
             }
           }
         }
 
-        // If no stock in same province or no delivery time found, proceed with distance calculation
-        const locationsWithDistances = await Promise.all(
-          stockLocations.map(async (stock) => {
-            const { data: distanceData } = await supabase
-              .from('delivery_province_distance')
-              .select('distance_km')
-              .or(`and(province_id_A.eq.${destinationProvinceId},province_id_B.eq.${stock.master_suppliers_locations.province_id}),and(province_id_A.eq.${stock.master_suppliers_locations.province_id},province_id_B.eq.${destinationProvinceId})`)
-              .maybeSingle();
-
-            return {
-              ...stock,
-              distance: distanceData?.distance_km || Infinity
-            };
-          })
-        );
-
-        // Sort locations by distance
-        locationsWithDistances.sort((a, b) => (a.distance || Infinity) - (b.distance || Infinity));
-
-        // Get the province_id of the closest location
-        const closestLocation = locationsWithDistances[0];
-        if (!closestLocation) {
-          return { deliveryDays: "-"};
-        }
-
-        const sourceProvinceId = closestLocation.master_suppliers_locations.province_id;
-
-        // Get delivery time
-        let deliveryDays = "-";
-        if (product?.supplier_id) {
-          const { data: deliveryTimeData } = await supabase
-            .from('delivery_times')
-            .select('delivery_days')
-            .eq('supplier_id', product.supplier_id)
-            .or(`and(province_id_a.eq.${destinationProvinceId},province_id_b.eq.${sourceProvinceId}),and(province_id_a.eq.${sourceProvinceId},province_id_b.eq.${destinationProvinceId})`)
-            .maybeSingle();
-
-          deliveryDays = deliveryTimeData?.delivery_days || "-";
-        }
-
-        // Keep existing pickup time calculation logic
+        // Calculate Pickup Time (independent of delivery time)
         let pickupTime = "-";
         
         const { data: pickupLocations } = await supabase
