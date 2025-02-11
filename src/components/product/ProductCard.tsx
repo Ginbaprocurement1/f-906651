@@ -1,4 +1,3 @@
-
 import { Button } from "@/components/ui/button";
 import { ShoppingCart, Plus, Minus } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
@@ -130,101 +129,118 @@ export const ProductCard = ({ product, userRole, onEdit, onDelete }: ProductCard
     queryFn: async () => {
       if (!selectedLocation) return { deliveryDays: "-", pickupTime: "-" };
 
-      // Get stock locations and distances
-      const { data: stockData } = await supabase
-        .from('supplier_stock')
-        .select(`
-          quantity,
-          location_id,
-          master_suppliers_locations!inner (
-            province_id
-          )
-        `)
-        .eq('product_id', product.product_id)
-        .gt('quantity', 0);
+      try {
+        const { data: locationData, error: locationError } = await supabase
+          .from('master_client_locations')
+          .select('province_id')
+          .eq('delivery_location_id', selectedLocation.delivery_location_id)
+          .single();
 
-      if (!stockData?.length) return { deliveryDays: "-", pickupTime: "-" };
+        if (locationError || !locationData) {
+          console.error('Error getting destination province:', locationError);
+          return { deliveryDays: "-", pickupTime: "-" };
+        }
 
-      // Get distances for each stock location
-      const stockWithDistances = await Promise.all(
-        stockData.map(async (stock) => {
-          const { data: distanceData } = await supabase
-            .from('delivery_province_distance')
-            .select('distance_km')
-            .or(`and(province_id_A.eq.${selectedLocation.province_id},province_id_B.eq.${stock.master_suppliers_locations.province_id}),and(province_id_A.eq.${stock.master_suppliers_locations.province_id},province_id_B.eq.${selectedLocation.province_id})`)
-            .maybeSingle();
+        const destinationProvinceId = locationData.province_id;
 
-          return {
-            ...stock,
-            distance: distanceData?.distance_km || Infinity
-          };
-        })
-      );
-
-      // Sort by distance and ensure we have a valid nearest location
-      stockWithDistances.sort((a, b) => (a.distance || Infinity) - (b.distance || Infinity));
-      const nearestStock = stockWithDistances[0];
-
-      if (!nearestStock) return { deliveryDays: "-", pickupTime: "-" };
-
-      // Get delivery time using the nearest location's province
-      let deliveryDays = "-";
-      if (product.supplier_id) {
-        const { data: deliveryTimes } = await supabase
-          .from('delivery_times')
-          .select('delivery_days')
-          .eq('supplier_id', product.supplier_id)
-          .or(`and(province_id_a.eq.${selectedLocation.province_id},province_id_b.eq.${nearestStock.master_suppliers_locations.province_id}),and(province_id_a.eq.${nearestStock.master_suppliers_locations.province_id},province_id_b.eq.${selectedLocation.province_id})`)
-          .maybeSingle();
-        
-        deliveryDays = deliveryTimes?.delivery_days || "-";
-      }
-
-      // Get pickup time only for locations in the same province
-      let pickupTime = "-";
-      
-      // Get pickup locations in the same province as the selected location
-      const { data: pickupLocations } = await supabase
-        .from('master_suppliers_locations')
-        .select('pickup_location_id')
-        .eq('province_id', selectedLocation.province_id);
-
-      if (pickupLocations?.length) {
-        const locationIds = pickupLocations.map(loc => loc.pickup_location_id);
-        
-        // Check stock at these locations and sort by quantity
-        const { data: sameProvinceStock } = await supabase
+        const { data: stockLocations, error: stockError } = await supabase
           .from('supplier_stock')
           .select(`
+            quantity,
             location_id,
-            quantity
+            master_suppliers_locations!inner (
+              province_id
+            )
           `)
           .eq('product_id', product.product_id)
-          .gt('quantity', 0)
-          .in('location_id', locationIds)
-          .order('quantity', { ascending: false });
+          .gt('quantity', 0);
 
-        if (sameProvinceStock?.length) {
-          // Use the location with the highest stock
-          const bestLocation = sameProvinceStock[0];
-          const { data: pickupTimeData } = await supabase
-            .from('pickup_times')
-            .select('time_limit')
-            .eq('pickup_location_id', bestLocation.location_id)
+        if (stockError || !stockLocations?.length) {
+          console.error('Error getting stock locations:', stockError);
+          return { deliveryDays: "-", pickupTime: "-" };
+        }
+
+        const locationsWithDistances = await Promise.all(
+          stockLocations.map(async (stock) => {
+            const { data: distanceData } = await supabase
+              .from('delivery_province_distance')
+              .select('distance_km')
+              .or(`and(province_id_A.eq.${destinationProvinceId},province_id_B.eq.${stock.master_suppliers_locations.province_id}),and(province_id_A.eq.${stock.master_suppliers_locations.province_id},province_id_B.eq.${destinationProvinceId})`)
+              .maybeSingle();
+
+            return {
+              ...stock,
+              distance: distanceData?.distance_km || Infinity
+            };
+          })
+        );
+
+        locationsWithDistances.sort((a, b) => (a.distance || Infinity) - (b.distance || Infinity));
+
+        const closestLocation = locationsWithDistances[0];
+        if (!closestLocation) {
+          return { deliveryDays: "-", pickupTime: "-" };
+        }
+
+        const sourceProvinceId = closestLocation.master_suppliers_locations.province_id;
+
+        let deliveryDays = "-";
+        if (product.supplier_id) {
+          const { data: deliveryTimeData } = await supabase
+            .from('delivery_times')
+            .select('delivery_days')
+            .eq('supplier_id', product.supplier_id)
+            .or(`and(province_id_a.eq.${destinationProvinceId},province_id_b.eq.${sourceProvinceId}),and(province_id_a.eq.${sourceProvinceId},province_id_b.eq.${destinationProvinceId})`)
             .maybeSingle();
 
-          if (pickupTimeData?.time_limit) {
-            const now = new Date();
-            const timeLimit = new Date(now.toDateString() + ' ' + pickupTimeData.time_limit);
-            pickupTime = now > timeLimit ? "Mañana" : "Hoy";
+          deliveryDays = deliveryTimeData?.delivery_days || "-";
+        }
+
+        let pickupTime = "-";
+        
+        const { data: pickupLocations } = await supabase
+          .from('master_suppliers_locations')
+          .select('pickup_location_id')
+          .eq('province_id', destinationProvinceId);
+
+        if (pickupLocations?.length) {
+          const locationIds = pickupLocations.map(loc => loc.pickup_location_id);
+          
+          const { data: sameProvinceStock } = await supabase
+            .from('supplier_stock')
+            .select(`
+              location_id,
+              quantity
+            `)
+            .eq('product_id', product.product_id)
+            .gt('quantity', 0)
+            .in('location_id', locationIds)
+            .order('quantity', { ascending: false });
+
+          if (sameProvinceStock?.length) {
+            const bestLocation = sameProvinceStock[0];
+            const { data: pickupTimeData } = await supabase
+              .from('pickup_times')
+              .select('time_limit')
+              .eq('pickup_location_id', bestLocation.location_id)
+              .maybeSingle();
+
+            if (pickupTimeData?.time_limit) {
+              const now = new Date();
+              const timeLimit = new Date(now.toDateString() + ' ' + pickupTimeData.time_limit);
+              pickupTime = now > timeLimit ? "Mañana" : "Hoy";
+            }
           }
         }
-      }
 
-      return {
-        deliveryDays,
-        pickupTime
-      };
+        return {
+          deliveryDays,
+          pickupTime
+        };
+      } catch (error) {
+        console.error('Error calculating delivery info:', error);
+        return { deliveryDays: "-", pickupTime: "-" };
+      }
     }
   });
 

@@ -235,19 +235,44 @@ const ProductDetail = () => {
           deliveryDays = deliveryTimeData?.delivery_days || "-";
         }
 
-        // Handle pickup time calculation (keeping existing logic)
+        // Keep existing pickup time calculation logic
         let pickupTime = "-";
-        if (destinationProvinceId === sourceProvinceId) {
-          const { data: pickupTimeData } = await supabase
-            .from('pickup_times')
-            .select('time_limit')
-            .eq('pickup_location_id', closestLocation.location_id)
-            .maybeSingle();
+        
+        // Get pickup locations in the same province as the selected location
+        const { data: pickupLocations } = await supabase
+          .from('master_suppliers_locations')
+          .select('pickup_location_id')
+          .eq('province_id', destinationProvinceId);
 
-          if (pickupTimeData?.time_limit) {
-            const now = new Date();
-            const timeLimit = new Date(now.toDateString() + ' ' + pickupTimeData.time_limit);
-            pickupTime = now < timeLimit ? "Hoy" : "Mañana";
+        if (pickupLocations?.length) {
+          const locationIds = pickupLocations.map(loc => loc.pickup_location_id);
+          
+          // Check stock at these locations and sort by quantity
+          const { data: sameProvinceStock } = await supabase
+            .from('supplier_stock')
+            .select(`
+              location_id,
+              quantity
+            `)
+            .eq('product_id', parseInt(productId as string))
+            .gt('quantity', 0)
+            .in('location_id', locationIds)
+            .order('quantity', { ascending: false });
+
+          if (sameProvinceStock?.length) {
+            // Use the location with the highest stock
+            const bestLocation = sameProvinceStock[0];
+            const { data: pickupTimeData } = await supabase
+              .from('pickup_times')
+              .select('time_limit')
+              .eq('pickup_location_id', bestLocation.location_id)
+              .maybeSingle();
+
+            if (pickupTimeData?.time_limit) {
+              const now = new Date();
+              const timeLimit = new Date(now.toDateString() + ' ' + pickupTimeData.time_limit);
+              pickupTime = now > timeLimit ? "Mañana" : "Hoy";
+            }
           }
         }
 
