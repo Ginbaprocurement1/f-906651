@@ -11,6 +11,8 @@ import { ArrowLeft, Plus, Upload } from "lucide-react";
 import { ProductFormDialog } from "@/components/product/ProductFormDialog";
 import { ImportCatalogDialog } from "@/components/product/ImportCatalogDialog";
 import { Product } from "@/types/product";
+import { WorkCenterSelect } from "@/components/WorkCenterSelect";
+import { useWorkCenterStore } from "@/stores/useWorkCenterStore";
 
 const ProductList = () => {
   const [products, setProducts] = useState<Product[]>([]);
@@ -24,6 +26,7 @@ const ProductList = () => {
   const [showProductForm, setShowProductForm] = useState(false);
   const [productToEdit, setProductToEdit] = useState<Product | null>(null);
   const navigate = useNavigate();
+  const { selectedLocation } = useWorkCenterStore();
 
   const [showImportDialog, setShowImportDialog] = useState(false);
 
@@ -224,7 +227,13 @@ const ProductList = () => {
             </div>
           )}
         </div>
-
+        <div className="flex justify-between items-center mb-8">
+          <Button variant="ghost" onClick={() => navigate(-1)}>
+            <ArrowLeft className="h-4 w-4 mr-2" />
+            Volver
+          </Button>
+          {userRole === 'Client' && <WorkCenterSelect />}
+        </div>
         <div className="grid grid-cols-12 gap-6">
           <div className="col-span-3">
             <ProductFilters onFilterChange={handleFilterChange} />
