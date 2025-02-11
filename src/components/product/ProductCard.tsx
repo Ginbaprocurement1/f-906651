@@ -168,12 +168,17 @@ export const ProductCard = ({ product, userRole, onEdit, onDelete }: ProductCard
       if (!nearestStock) return { deliveryDays: "-", pickupTime: "-" };
 
       // Get delivery time using the nearest location's province
-      const { data: deliveryTimes } = await supabase
-        .from('delivery_times')
-        .select('delivery_days')
-        .eq('supplier_id', product.supplier_id)
-        .or(`and(province_id_a.eq.${selectedLocation.province_id},province_id_b.eq.${nearestStock.master_suppliers_locations.province_id}),and(province_id_a.eq.${nearestStock.master_suppliers_locations.province_id},province_id_b.eq.${selectedLocation.province_id})`)
-        .maybeSingle();
+      let deliveryDays = "-";
+      if (product.supplier_id) {
+        const { data: deliveryTimes } = await supabase
+          .from('delivery_times')
+          .select('delivery_days')
+          .eq('supplier_id', product.supplier_id)
+          .or(`and(province_id_a.eq.${selectedLocation.province_id},province_id_b.eq.${nearestStock.master_suppliers_locations.province_id}),and(province_id_a.eq.${nearestStock.master_suppliers_locations.province_id},province_id_b.eq.${selectedLocation.province_id})`)
+          .maybeSingle();
+        
+        deliveryDays = deliveryTimes?.delivery_days || "-";
+      }
 
       // Get pickup time only for locations in the same province
       let pickupTime = "-";
@@ -217,7 +222,7 @@ export const ProductCard = ({ product, userRole, onEdit, onDelete }: ProductCard
       }
 
       return {
-        deliveryDays: deliveryTimes?.delivery_days || "-",
+        deliveryDays,
         pickupTime
       };
     }
@@ -355,4 +360,3 @@ export const ProductCard = ({ product, userRole, onEdit, onDelete }: ProductCard
     </div>
   );
 };
-
