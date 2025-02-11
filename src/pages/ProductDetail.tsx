@@ -216,8 +216,7 @@ const ProductDetail = () => {
 
             if (deliveryTimeData?.delivery_days) {
               return {
-                deliveryDays: deliveryTimeData.delivery_days,
-                pickupTime: "-" // We'll calculate this later
+                deliveryDays: deliveryTimeData.delivery_days
               };
             }
           }
@@ -245,7 +244,7 @@ const ProductDetail = () => {
         // Get the province_id of the closest location
         const closestLocation = locationsWithDistances[0];
         if (!closestLocation) {
-          return { deliveryDays: "-", pickupTime: "-" };
+          return { deliveryDays: "-"};
         }
 
         const sourceProvinceId = closestLocation.master_suppliers_locations.province_id;
