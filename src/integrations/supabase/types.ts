@@ -1140,18 +1140,6 @@ export type Database = {
       }
     }
     Views: {
-      client_requests_summary: {
-        Row: {
-          company_id: number | null
-          num_en_espera: number | null
-          num_por_contestar: number | null
-          num_rfq_en_espera: number | null
-          num_rfq_por_contestar: number | null
-          num_rfq_sin_respuesta: number | null
-          num_sin_respuesta: number | null
-        }
-        Relationships: []
-      }
       email_messages_view: {
         Row: {
           body: string | null
