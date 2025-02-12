@@ -43,7 +43,6 @@ export interface CartItem {
   product_uom: string;
   quantity: number;
   supplier_name: string;
-  supplier_id: number;  // Added this field
   ref_supplier: string | null;
   delivery_method?: string;
   payment_method?: string;
