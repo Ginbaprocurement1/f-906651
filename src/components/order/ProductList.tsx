@@ -29,7 +29,7 @@ export const ProductList = ({ items, onUpdateQuantity, onRemoveItem }: ProductLi
           <div className="space-y-4">
             {items.map((item) => (
               <div key={item.id} className="flex items-start justify-between p-4 bg-gray-50 rounded-lg">
-                <div className="flex gap-4">
+                <div className="flex gap-4 flex-1">
                   {item.product_image_url && (
                     <img 
                       src={item.product_image_url} 
@@ -46,8 +46,6 @@ export const ProductList = ({ items, onUpdateQuantity, onRemoveItem }: ProductLi
                       {item.product_name}
                     </p>
                     <p className="text-sm text-gray-500">{item.supplier_name}</p>
-                    <p className="text-xs text-gray-500">Entrega: {item.deliveryTime || "No disponible"}</p>
-                    <p className="text-xs text-gray-500">Recogida: {item.pickupTime || "No disponible"}</p>
 
                     <div className="mt-2 flex items-center gap-2">
                       <Button 
@@ -77,15 +75,20 @@ export const ProductList = ({ items, onUpdateQuantity, onRemoveItem }: ProductLi
                       </p>
                     </div>
                   </div>
-                  <div className="ml-4 w-48">
-                    <p className="text-sm font-semibold mb-2">Stock Disponible</p>
-                    <StockTable 
-                      productId={item.product_id} 
-                      supplierName={item.supplier_name}
-                      className="border rounded-lg"
-                    />
-                  </div>
                 </div>
+
+                {/* Stock y tiempos de entrega/recogida alineados a la derecha */}
+                <div className="ml-4 w-64 flex flex-col gap-2">
+                  <p className="text-sm font-semibold">Stock Disponible</p>
+                  <StockTable 
+                    productId={item.product_id} 
+                    supplierName={item.supplier_name}
+                    className="border rounded-lg"
+                  />
+                  <p className="text-xs text-gray-500 mt-2">Entrega: {item.deliveryTime || "No disponible"}</p>
+                  <p className="text-xs text-gray-500">Recogida: {item.pickupTime || "No disponible"}</p>
+                </div>
+
                 <Button
                   variant="ghost"
                   size="icon"
