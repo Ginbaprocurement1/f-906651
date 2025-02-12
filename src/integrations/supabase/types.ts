@@ -1140,48 +1140,17 @@ export type Database = {
       }
     }
     Views: {
-      delivery_dates_calculation: {
+      client_requests_summary: {
         Row: {
-          base_delivery_days: number | null
-          cart_item_id: number | null
-          client_province_id: string | null
-          delivery_location_id: number | null
-          delivery_method: string | null
-          pickup_location_id: number | null
-          pickup_time_limit: string | null
-          supplier_province_id: string | null
-          total_delivery_days: number | null
+          company_id: number | null
+          num_en_espera: number | null
+          num_por_contestar: number | null
+          num_rfq_en_espera: number | null
+          num_rfq_por_contestar: number | null
+          num_rfq_sin_respuesta: number | null
+          num_sin_respuesta: number | null
         }
-        Relationships: [
-          {
-            foreignKeyName: "cart_items_delivery_location_id_fkey"
-            columns: ["delivery_location_id"]
-            isOneToOne: false
-            referencedRelation: "master_client_locations"
-            referencedColumns: ["delivery_location_id"]
-          },
-          {
-            foreignKeyName: "cart_items_pickup_location_id_fkey"
-            columns: ["pickup_location_id"]
-            isOneToOne: false
-            referencedRelation: "master_suppliers_locations"
-            referencedColumns: ["pickup_location_id"]
-          },
-          {
-            foreignKeyName: "master_client_locations_province_id_fkey"
-            columns: ["client_province_id"]
-            isOneToOne: false
-            referencedRelation: "master_province"
-            referencedColumns: ["province_id"]
-          },
-          {
-            foreignKeyName: "master_suppliers_locations_province_id_fkey"
-            columns: ["supplier_province_id"]
-            isOneToOne: false
-            referencedRelation: "master_province"
-            referencedColumns: ["province_id"]
-          },
-        ]
+        Relationships: []
       }
       email_messages_view: {
         Row: {

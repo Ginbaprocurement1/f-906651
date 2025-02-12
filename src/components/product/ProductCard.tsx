@@ -19,11 +19,6 @@ import { format } from "date-fns";
 import { es } from "date-fns/locale";
 import { Product } from "@/types/product";
 
-interface DeliveryInfo {
-  deliveryDays: string;
-  pickupTime: string;
-}
-
 interface ProductCardProps {
   product: Product;
   userRole?: string;
@@ -135,38 +130,66 @@ export const ProductCard = ({ product, userRole, onEdit, onDelete }: ProductCard
       if (!selectedLocation) return { deliveryDays: "-", pickupTime: "-" };
 
       try {
-        let deliveryDays = "-";
-        if (product.delivery_days) {
-          const days = product.delivery_days;
-          const today = new Date();
-          const deliveryDate = new Date(today.setDate(today.getDate() + days));
-          deliveryDays = format(deliveryDate, "d 'de' MMMM", { locale: es });
+        const { data: locationData, error: locationError } = await supabase
+          .from('master_client_locations')
+          .select('province_id')
+          .eq('delivery_location_id', selectedLocation.delivery_location_id)
+          .single();
+
+        if (locationError || !locationData) {
+          console.error('Error getting destination province:', locationError);
+          return { deliveryDays: "-", pickupTime: "-" };
         }
 
-        const { data: pickupLocations } = await supabase
-          .from('master_suppliers_locations')
-          .select(`
-            pickup_location_id,
-            pickup_times (
-              time_limit
-            )
-          `)
-          .eq('supplier_name', product.supplier_name)
-          .order('pickup_location_id');
+        const destinationProvinceId = locationData.province_id;
+
+        let deliveryDays = "-";
+        if (product.supplier_id) {
+          const { data: deliveryTimeData } = await supabase
+            .from('delivery_times')
+            .select('delivery_days')
+            .eq('supplier_id', product.supplier_id)
+            .eq('province_id_a', destinationProvinceId)
+            .eq('province_id_b', destinationProvinceId)
+            .maybeSingle();
+
+          deliveryDays = deliveryTimeData?.delivery_days || "-";
+        }
 
         let pickupTime = "-";
-        if (pickupLocations && pickupLocations.length > 0) {
-          const firstLocation = pickupLocations[0];
-          const timeLimit = firstLocation.pickup_times?.[0]?.time_limit;
+        
+        const { data: pickupLocations } = await supabase
+          .from('master_suppliers_locations')
+          .select('pickup_location_id')
+          .eq('province_id', destinationProvinceId);
+
+        if (pickupLocations?.length) {
+          const locationIds = pickupLocations.map(loc => loc.pickup_location_id);
           
-          if (timeLimit) {
-            const now = new Date();
-            const timeLimitDate = new Date(now.toDateString() + ' ' + timeLimit);
-            const isAfterTimeLimit = now > timeLimitDate;
-            const pickupDate = isAfterTimeLimit ? 
-              new Date(now.setDate(now.getDate() + 1)) : 
-              now;
-            pickupTime = format(pickupDate, "d 'de' MMMM", { locale: es });
+          const { data: sameProvinceStock } = await supabase
+            .from('supplier_stock')
+            .select(`
+              location_id,
+              quantity
+            `)
+            .eq('product_id', product.product_id)
+            .gt('quantity', 0)
+            .in('location_id', locationIds)
+            .order('quantity', { ascending: false });
+
+          if (sameProvinceStock?.length) {
+            const bestLocation = sameProvinceStock[0];
+            const { data: pickupTimeData } = await supabase
+              .from('pickup_times')
+              .select('time_limit')
+              .eq('pickup_location_id', bestLocation.location_id)
+              .maybeSingle();
+
+            if (pickupTimeData?.time_limit) {
+              const now = new Date();
+              const timeLimit = new Date(now.toDateString() + ' ' + pickupTimeData.time_limit);
+              pickupTime = now > timeLimit ? "Mañana" : "Hoy";
+            }
           }
         }
 
@@ -206,8 +229,8 @@ export const ProductCard = ({ product, userRole, onEdit, onDelete }: ProductCard
           </p>
           {userRole === 'Client' && (
             <div className="text-sm text-gray-600 mt-2">
-              <p>Envío disponible: {deliveryInfo?.deliveryDays}</p>
-              <p>Recogida disponible: {deliveryInfo?.pickupTime}</p>
+              <p>Tiempo de entrega: {deliveryInfo?.deliveryDays}</p>
+              <p>Tiempo de recogida: {deliveryInfo?.pickupTime}</p>
             </div>
           )}
           <Accordion type="single" collapsible className="w-full" data-accordion-component>

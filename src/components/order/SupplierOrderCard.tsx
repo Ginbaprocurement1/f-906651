@@ -11,11 +11,6 @@ interface SupplierOrderCardProps {
   supplier: string;
   items: CartItem[];
   locations: SupplierLocation[];
-  deliveryDates?: {
-    cart_item_id: number;
-    total_delivery_days: number | null;
-    pickup_time_limit: string | null;
-  }[];
   clientLocations: Location[];
   selectedLocation: string;
   customAddressMode: boolean;
@@ -41,7 +36,6 @@ export const SupplierOrderCard = ({
   supplier,
   items,
   locations,
-  deliveryDates,
   clientLocations,
   selectedLocation,
   customAddressMode,
@@ -157,7 +151,6 @@ export const SupplierOrderCard = ({
 
         <ProductList
           items={items}
-          deliveryDates={deliveryDates}
           onUpdateQuantity={onUpdateQuantity}
           onRemoveItem={onRemoveItem}
         />
