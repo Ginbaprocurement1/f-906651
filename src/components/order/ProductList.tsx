@@ -46,6 +46,9 @@ export const ProductList = ({ items, onUpdateQuantity, onRemoveItem }: ProductLi
                       {item.product_name}
                     </p>
                     <p className="text-sm text-gray-500">{item.supplier_name}</p>
+                    <p className="text-xs text-gray-500">Entrega: {item.deliveryTime || "No disponible"}</p>
+                    <p className="text-xs text-gray-500">Recogida: {item.pickupTime || "No disponible"}</p>
+
                     <div className="mt-2 flex items-center gap-2">
                       <Button 
                         variant="outline" 
