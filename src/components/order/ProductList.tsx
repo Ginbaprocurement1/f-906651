@@ -28,9 +28,12 @@ export const ProductList = ({ items, onUpdateQuantity, onRemoveItem }: ProductLi
         <AccordionContent>
           <div className="space-y-4">
             {items.map((item) => (
-              <div key={item.id} className="flex items-start justify-between p-4 bg-gray-50 rounded-lg">
+              <div 
+                key={item.id} 
+                className="flex items-start justify-between p-4 bg-gray-50 rounded-lg"
+              >
                 
-                {/* Contenedor de imagen y detalles */}
+                {/* Imagen y detalles del producto */}
                 <div className="flex gap-4 flex-1">
                   {item.product_image_url && (
                     <img 
@@ -49,6 +52,7 @@ export const ProductList = ({ items, onUpdateQuantity, onRemoveItem }: ProductLi
                     </p>
                     <p className="text-sm text-gray-500">{item.supplier_name}</p>
 
+                    {/* Controles de cantidad */}
                     <div className="mt-2 flex items-center gap-2">
                       <Button 
                         variant="outline" 
@@ -68,6 +72,8 @@ export const ProductList = ({ items, onUpdateQuantity, onRemoveItem }: ProductLi
                         +
                       </Button>
                     </div>
+
+                    {/* Precios */}
                     <div className="mt-2">
                       <p className="text-sm font-semibold">
                         {item.price_without_vat}€ sin IVA
@@ -79,10 +85,10 @@ export const ProductList = ({ items, onUpdateQuantity, onRemoveItem }: ProductLi
                   </div>
                 </div>
 
-                {/* Contenedor con StockTable + tiempos en la misma fila */}
-                <div className="flex-1 flex justify-between items-start ml-4">
-                  {/* Stock Disponible alineado a la izquierda y limitado a 1/3 del ancho */}
-                  <div className="max-w-1/3 flex-1">
+                {/* Nueva columna: Stock + tiempos de entrega */}
+                <div className="flex flex-col ml-6 w-1/3 min-w-[200px]">
+                  {/* Tabla de Stock */}
+                  <div className="mb-2">
                     <p className="text-sm font-semibold">Stock Disponible</p>
                     <StockTable 
                       productId={item.product_id} 
@@ -91,13 +97,14 @@ export const ProductList = ({ items, onUpdateQuantity, onRemoveItem }: ProductLi
                     />
                   </div>
 
-                  {/* Entrega y Recogida alineados a la derecha */}
-                  <div className="flex flex-col text-right ml-4">
-                    <p className="text-xs text-gray-500">Entrega: {item.deliveryTime || "No disponible"}</p>
-                    <p className="text-xs text-gray-500">Recogida: {item.pickupTime || "No disponible"}</p>
+                  {/* Tiempos de entrega y recogida */}
+                  <div className="text-sm text-gray-500">
+                    <p>Entrega: {item.deliveryTime || "No disponible"}</p>
+                    <p>Recogida: {item.pickupTime || "No disponible"}</p>
                   </div>
                 </div>
 
+                {/* Botón de eliminar */}
                 <Button
                   variant="ghost"
                   size="icon"
