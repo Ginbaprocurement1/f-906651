@@ -19,6 +19,11 @@ import { format } from "date-fns";
 import { es } from "date-fns/locale";
 import { Product } from "@/types/product";
 
+interface DeliveryInfo {
+  deliveryDays: string;
+  pickupTime: string;
+}
+
 interface ProductCardProps {
   product: Product;
   userRole?: string;
@@ -130,67 +135,23 @@ export const ProductCard = ({ product, userRole, onEdit, onDelete }: ProductCard
       if (!selectedLocation) return { deliveryDays: "-", pickupTime: "-" };
 
       try {
-        const { data: locationData, error: locationError } = await supabase
-          .from('master_client_locations')
-          .select('province_id')
-          .eq('delivery_location_id', selectedLocation.delivery_location_id)
-          .single();
-
-        if (locationError || !locationData) {
-          console.error('Error getting destination province:', locationError);
-          return { deliveryDays: "-", pickupTime: "-" };
-        }
-
-        const destinationProvinceId = locationData.province_id;
+        const { data: deliveryDates } = await supabase
+          .from('delivery_dates_calculation')
+          .select('total_delivery_days, pickup_time_limit')
+          .eq('cart_item_id', product.product_id)
+          .maybeSingle();
 
         let deliveryDays = "-";
-        if (product.supplier_id) {
-          const { data: deliveryTimeData } = await supabase
-            .from('delivery_times')
-            .select('delivery_days')
-            .eq('supplier_id', product.supplier_id)
-            .eq('province_id_a', destinationProvinceId)
-            .eq('province_id_b', destinationProvinceId)
-            .maybeSingle();
+        let pickupTime = "-";
 
-          deliveryDays = deliveryTimeData?.delivery_days || "-";
+        if (deliveryDates?.total_delivery_days) {
+          deliveryDays = `${deliveryDates.total_delivery_days} días`;
         }
 
-        let pickupTime = "-";
-        
-        const { data: pickupLocations } = await supabase
-          .from('master_suppliers_locations')
-          .select('pickup_location_id')
-          .eq('province_id', destinationProvinceId);
-
-        if (pickupLocations?.length) {
-          const locationIds = pickupLocations.map(loc => loc.pickup_location_id);
-          
-          const { data: sameProvinceStock } = await supabase
-            .from('supplier_stock')
-            .select(`
-              location_id,
-              quantity
-            `)
-            .eq('product_id', product.product_id)
-            .gt('quantity', 0)
-            .in('location_id', locationIds)
-            .order('quantity', { ascending: false });
-
-          if (sameProvinceStock?.length) {
-            const bestLocation = sameProvinceStock[0];
-            const { data: pickupTimeData } = await supabase
-              .from('pickup_times')
-              .select('time_limit')
-              .eq('pickup_location_id', bestLocation.location_id)
-              .maybeSingle();
-
-            if (pickupTimeData?.time_limit) {
-              const now = new Date();
-              const timeLimit = new Date(now.toDateString() + ' ' + pickupTimeData.time_limit);
-              pickupTime = now > timeLimit ? "Mañana" : "Hoy";
-            }
-          }
+        if (deliveryDates?.pickup_time_limit) {
+          const now = new Date();
+          const timeLimit = new Date(now.toDateString() + ' ' + deliveryDates.pickup_time_limit);
+          pickupTime = now > timeLimit ? "Mañana" : "Hoy";
         }
 
         return {

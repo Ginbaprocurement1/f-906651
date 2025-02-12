@@ -10,6 +10,7 @@ import { toast } from "@/components/ui/use-toast";
 import { GroupedCartItems, Location } from "@/types/order";
 import { SupplierOrderCard } from "@/components/order/SupplierOrderCard";
 import { OrderSummaryCard } from "@/components/order/OrderSummaryCard";
+import { useQuery } from "@tanstack/react-query";
 
 const OrderSummary = () => {
   const navigate = useNavigate();
