@@ -162,6 +162,13 @@ export type Database = {
             foreignKeyName: "delivery_times_supplier_id_fkey"
             columns: ["supplier_id"]
             isOneToOne: false
+            referencedRelation: "cart_items_with_supplier"
+            referencedColumns: ["supplier_id"]
+          },
+          {
+            foreignKeyName: "delivery_times_supplier_id_fkey"
+            columns: ["supplier_id"]
+            isOneToOne: false
             referencedRelation: "master_suppliers_company"
             referencedColumns: ["supplier_id"]
           },
@@ -297,6 +304,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "po_header"
             referencedColumns: ["po_id"]
+          },
+          {
+            foreignKeyName: "invoice_header_supplier_id_fkey"
+            columns: ["supplier_id"]
+            isOneToOne: false
+            referencedRelation: "cart_items_with_supplier"
+            referencedColumns: ["supplier_id"]
           },
           {
             foreignKeyName: "invoice_header_supplier_id_fkey"
@@ -736,6 +750,13 @@ export type Database = {
             foreignKeyName: "master_suppliers_locations_supplier_id_fkey"
             columns: ["supplier_id"]
             isOneToOne: false
+            referencedRelation: "cart_items_with_supplier"
+            referencedColumns: ["supplier_id"]
+          },
+          {
+            foreignKeyName: "master_suppliers_locations_supplier_id_fkey"
+            columns: ["supplier_id"]
+            isOneToOne: false
             referencedRelation: "master_suppliers_company"
             referencedColumns: ["supplier_id"]
           },
@@ -770,6 +791,13 @@ export type Database = {
           supplier_user_name?: string | null
         }
         Relationships: [
+          {
+            foreignKeyName: "master_suppliers_user_supplier_company_id_fkey"
+            columns: ["supplier_company_id"]
+            isOneToOne: false
+            referencedRelation: "cart_items_with_supplier"
+            referencedColumns: ["supplier_id"]
+          },
           {
             foreignKeyName: "master_suppliers_user_supplier_company_id_fkey"
             columns: ["supplier_company_id"]
@@ -864,6 +892,13 @@ export type Database = {
             foreignKeyName: "master_user_supplier_id_fkey"
             columns: ["supplier_id"]
             isOneToOne: false
+            referencedRelation: "cart_items_with_supplier"
+            referencedColumns: ["supplier_id"]
+          },
+          {
+            foreignKeyName: "master_user_supplier_id_fkey"
+            columns: ["supplier_id"]
+            isOneToOne: false
             referencedRelation: "master_suppliers_company"
             referencedColumns: ["supplier_id"]
           },
@@ -951,6 +986,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "master_client_company"
             referencedColumns: ["company_id"]
+          },
+          {
+            foreignKeyName: "po_header_supplier_id_fkey"
+            columns: ["supplier_id"]
+            isOneToOne: false
+            referencedRelation: "cart_items_with_supplier"
+            referencedColumns: ["supplier_id"]
           },
           {
             foreignKeyName: "po_header_supplier_id_fkey"
@@ -1133,6 +1175,13 @@ export type Database = {
             foreignKeyName: "stock_supplier_id_fkey"
             columns: ["supplier_id"]
             isOneToOne: false
+            referencedRelation: "cart_items_with_supplier"
+            referencedColumns: ["supplier_id"]
+          },
+          {
+            foreignKeyName: "stock_supplier_id_fkey"
+            columns: ["supplier_id"]
+            isOneToOne: false
             referencedRelation: "master_suppliers_company"
             referencedColumns: ["supplier_id"]
           },
@@ -1140,6 +1189,48 @@ export type Database = {
       }
     }
     Views: {
+      cart_items_with_supplier: {
+        Row: {
+          created_at: string | null
+          custom_address: string | null
+          custom_city: string | null
+          custom_country: string | null
+          custom_location_name: string | null
+          custom_postal_code: string | null
+          delivery_location_id: number | null
+          delivery_method: string | null
+          id: number | null
+          payment_method: string | null
+          pickup_location_id: number | null
+          product_id: number | null
+          quantity: number | null
+          supplier_id: number | null
+          user_id: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "cart_items_delivery_location_id_fkey"
+            columns: ["delivery_location_id"]
+            isOneToOne: false
+            referencedRelation: "master_client_locations"
+            referencedColumns: ["delivery_location_id"]
+          },
+          {
+            foreignKeyName: "cart_items_pickup_location_id_fkey"
+            columns: ["pickup_location_id"]
+            isOneToOne: false
+            referencedRelation: "master_suppliers_locations"
+            referencedColumns: ["pickup_location_id"]
+          },
+          {
+            foreignKeyName: "cart_items_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "master_product"
+            referencedColumns: ["product_id"]
+          },
+        ]
+      }
       client_requests_summary: {
         Row: {
           company_id: number | null
@@ -1186,6 +1277,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "master_client_company"
             referencedColumns: ["company_id"]
+          },
+          {
+            foreignKeyName: "invoice_header_supplier_id_fkey"
+            columns: ["supplier_id"]
+            isOneToOne: false
+            referencedRelation: "cart_items_with_supplier"
+            referencedColumns: ["supplier_id"]
           },
           {
             foreignKeyName: "invoice_header_supplier_id_fkey"

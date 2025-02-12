@@ -22,7 +22,7 @@ export const useCartStore = create<CartStore>((set, get) => ({
     set({ isLoading: true });
     try {
       const { data: cartItems, error } = await supabase
-        .from('cart_items')
+        .from('cart_items_with_supplier')
         .select(`
           id,
           quantity,
@@ -35,6 +35,7 @@ export const useCartStore = create<CartStore>((set, get) => ({
           custom_city,
           custom_country,
           custom_location_name,
+          supplier_id,
           master_product (
             product_id,
             product_name,
@@ -67,6 +68,7 @@ export const useCartStore = create<CartStore>((set, get) => ({
         custom_city: item.custom_city || null,
         custom_country: item.custom_country || null,
         custom_location_name: item.custom_location_name || null,
+        supplier_id: item.supplier_id,
         product_id: item.master_product.product_id,
         product_name: item.master_product.product_name,
         product_image_url: item.master_product.product_image_url,
