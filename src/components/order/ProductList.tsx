@@ -29,6 +29,8 @@ export const ProductList = ({ items, onUpdateQuantity, onRemoveItem }: ProductLi
           <div className="space-y-4">
             {items.map((item) => (
               <div key={item.id} className="flex items-start justify-between p-4 bg-gray-50 rounded-lg">
+                
+                {/* Contenedor de imagen y detalles */}
                 <div className="flex gap-4 flex-1">
                   {item.product_image_url && (
                     <img 
@@ -78,19 +80,19 @@ export const ProductList = ({ items, onUpdateQuantity, onRemoveItem }: ProductLi
                 </div>
 
                 {/* Contenedor con StockTable + tiempos en la misma fila */}
-                <div className="ml-4 w-64 flex flex-row items-center gap-4">
-                  {/* Stock Disponible */}
-                  <div>
+                <div className="flex-1 flex justify-between items-start ml-4">
+                  {/* Stock Disponible alineado a la izquierda y limitado a 1/3 del ancho */}
+                  <div className="max-w-1/3 flex-1">
                     <p className="text-sm font-semibold">Stock Disponible</p>
                     <StockTable 
                       productId={item.product_id} 
                       supplierName={item.supplier_name}
-                      className="border rounded-lg"
+                      className="border rounded-lg w-full"
                     />
                   </div>
 
-                  {/* Entrega y Recogida alineados a la derecha de la tabla */}
-                  <div className="flex flex-col text-right">
+                  {/* Entrega y Recogida alineados a la derecha */}
+                  <div className="flex flex-col text-right ml-4">
                     <p className="text-xs text-gray-500">Entrega: {item.deliveryTime || "No disponible"}</p>
                     <p className="text-xs text-gray-500">Recogida: {item.pickupTime || "No disponible"}</p>
                   </div>
