@@ -30,6 +30,8 @@ interface SupplierOrderCardProps {
   onSaveAddress: () => void;
   onUpdateQuantity: (id: number, quantity: number) => void;
   onRemoveItem: (id: number) => void;
+  deliveryTime?: string;  // Nuevo campo
+  pickupTime?: string;    // Nuevo campo
 }
 
 export const SupplierOrderCard = ({
@@ -150,10 +152,14 @@ export const SupplierOrderCard = ({
         </div>
 
         <ProductList
-          items={items}
-          onUpdateQuantity={onUpdateQuantity}
-          onRemoveItem={onRemoveItem}
-        />
+  items={items.map(item => ({
+    ...item,
+    deliveryTime: item.deliveryTime || "-",
+    pickupTime: item.pickupTime || "-"
+  }))}
+  onUpdateQuantity={onUpdateQuantity}
+  onRemoveItem={onRemoveItem}
+/>
       </div>
     </div>
   );
