@@ -135,23 +135,39 @@ export const ProductCard = ({ product, userRole, onEdit, onDelete }: ProductCard
       if (!selectedLocation) return { deliveryDays: "-", pickupTime: "-" };
 
       try {
-        const { data: deliveryDates } = await supabase
-          .from('delivery_dates_calculation')
-          .select('total_delivery_days, pickup_time_limit')
-          .eq('cart_item_id', product.product_id)
-          .maybeSingle();
-
         let deliveryDays = "-";
-        let pickupTime = "-";
-
-        if (deliveryDates?.total_delivery_days) {
-          deliveryDays = `${deliveryDates.total_delivery_days} días`;
+        if (product.delivery_days) {
+          const days = product.delivery_days;
+          const today = new Date();
+          const deliveryDate = new Date(today.setDate(today.getDate() + days));
+          deliveryDays = format(deliveryDate, "d 'de' MMMM", { locale: es });
         }
 
-        if (deliveryDates?.pickup_time_limit) {
-          const now = new Date();
-          const timeLimit = new Date(now.toDateString() + ' ' + deliveryDates.pickup_time_limit);
-          pickupTime = now > timeLimit ? "Mañana" : "Hoy";
+        const { data: pickupLocations } = await supabase
+          .from('master_suppliers_locations')
+          .select(`
+            pickup_location_id,
+            pickup_times (
+              time_limit
+            )
+          `)
+          .eq('supplier_name', product.supplier_name)
+          .order('pickup_location_id');
+
+        let pickupTime = "-";
+        if (pickupLocations && pickupLocations.length > 0) {
+          const firstLocation = pickupLocations[0];
+          const timeLimit = firstLocation.pickup_times?.[0]?.time_limit;
+          
+          if (timeLimit) {
+            const now = new Date();
+            const timeLimitDate = new Date(now.toDateString() + ' ' + timeLimit);
+            const isAfterTimeLimit = now > timeLimitDate;
+            const pickupDate = isAfterTimeLimit ? 
+              new Date(now.setDate(now.getDate() + 1)) : 
+              now;
+            pickupTime = format(pickupDate, "d 'de' MMMM", { locale: es });
+          }
         }
 
         return {
@@ -190,8 +206,8 @@ export const ProductCard = ({ product, userRole, onEdit, onDelete }: ProductCard
           </p>
           {userRole === 'Client' && (
             <div className="text-sm text-gray-600 mt-2">
-              <p>Tiempo de entrega: {deliveryInfo?.deliveryDays}</p>
-              <p>Tiempo de recogida: {deliveryInfo?.pickupTime}</p>
+              <p>Envío disponible: {deliveryInfo?.deliveryDays}</p>
+              <p>Recogida disponible: {deliveryInfo?.pickupTime}</p>
             </div>
           )}
           <Accordion type="single" collapsible className="w-full" data-accordion-component>

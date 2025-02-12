@@ -10,6 +10,8 @@ import {
 } from "@/components/ui/accordion";
 import { useNavigate } from "react-router-dom";
 import { StockTable } from "@/components/product/StockTable";
+import { format } from "date-fns";
+import { es } from "date-fns/locale";
 
 interface ProductListProps {
   items: CartItem[];
@@ -35,14 +37,22 @@ export const ProductList = ({ items, deliveryDates, onUpdateQuantity, onRemoveIt
           <div className="space-y-4">
             {items.map((item) => {
               const deliveryInfo = deliveryDates?.find(date => date.cart_item_id === item.id);
-              const deliveryTime = deliveryInfo?.total_delivery_days 
-                ? `${deliveryInfo.total_delivery_days} días`
-                : "-";
-              const pickupTime = deliveryInfo?.pickup_time_limit 
-                ? new Date() > new Date(new Date().toDateString() + ' ' + deliveryInfo.pickup_time_limit)
-                  ? "Mañana"
-                  : "Hoy"
-                : "-";
+              
+              let deliveryTimeText = "";
+              if (item.delivery_method === "Envío" && deliveryInfo?.total_delivery_days) {
+                const days = deliveryInfo.total_delivery_days;
+                const today = new Date();
+                const deliveryDate = new Date(today.setDate(today.getDate() + days));
+                deliveryTimeText = `Fecha de entrega: ${format(deliveryDate, "d 'de' MMMM", { locale: es })}`;
+              } else if (item.delivery_method === "Recogida" && deliveryInfo?.pickup_time_limit) {
+                const now = new Date();
+                const timeLimit = new Date(now.toDateString() + ' ' + deliveryInfo.pickup_time_limit);
+                const isAfterTimeLimit = now > timeLimit;
+                const pickupDate = isAfterTimeLimit ? 
+                  new Date(now.setDate(now.getDate() + 1)) : 
+                  now;
+                deliveryTimeText = `Fecha de recogida: ${format(pickupDate, "d 'de' MMMM", { locale: es })}`;
+              }
 
               return (
                 <div key={item.id} className="flex items-start justify-between p-4 bg-gray-50 rounded-lg">
@@ -90,10 +100,11 @@ export const ProductList = ({ items, deliveryDates, onUpdateQuantity, onRemoveIt
                           {item.price_with_vat}€ con IVA
                         </p>
                       </div>
-                      <div className="mt-2 text-sm text-gray-600">
-                        <p>Tiempo de entrega: {deliveryTime}</p>
-                        <p>Tiempo de recogida: {pickupTime}</p>
-                      </div>
+                      {deliveryTimeText && (
+                        <div className="mt-2 text-sm text-gray-600">
+                          <p>{deliveryTimeText}</p>
+                        </div>
+                      )}
                     </div>
                     <div className="ml-4 w-48">
                       <p className="text-sm font-semibold mb-2">Stock Disponible</p>
