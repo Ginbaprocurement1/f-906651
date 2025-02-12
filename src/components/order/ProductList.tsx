@@ -77,16 +77,23 @@ export const ProductList = ({ items, onUpdateQuantity, onRemoveItem }: ProductLi
                   </div>
                 </div>
 
-                {/* Stock y tiempos de entrega/recogida alineados a la derecha */}
-                <div className="ml-4 w-64 flex flex-col gap-2">
-                  <p className="text-sm font-semibold">Stock Disponible</p>
-                  <StockTable 
-                    productId={item.product_id} 
-                    supplierName={item.supplier_name}
-                    className="border rounded-lg"
-                  />
-                  <p className="text-xs text-gray-500 mt-2">Entrega: {item.deliveryTime || "No disponible"}</p>
-                  <p className="text-xs text-gray-500">Recogida: {item.pickupTime || "No disponible"}</p>
+                {/* Contenedor con StockTable + tiempos en la misma fila */}
+                <div className="ml-4 w-64 flex flex-row items-center gap-4">
+                  {/* Stock Disponible */}
+                  <div>
+                    <p className="text-sm font-semibold">Stock Disponible</p>
+                    <StockTable 
+                      productId={item.product_id} 
+                      supplierName={item.supplier_name}
+                      className="border rounded-lg"
+                    />
+                  </div>
+
+                  {/* Entrega y Recogida alineados a la derecha de la tabla */}
+                  <div className="flex flex-col text-right">
+                    <p className="text-xs text-gray-500">Entrega: {item.deliveryTime || "No disponible"}</p>
+                    <p className="text-xs text-gray-500">Recogida: {item.pickupTime || "No disponible"}</p>
+                  </div>
                 </div>
 
                 <Button
