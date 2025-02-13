@@ -89,8 +89,8 @@ export const ProductList = ({ items, onUpdateQuantity, onRemoveItem }: ProductLi
                 <div className="flex flex-row items-start gap-4 w-1/3 min-w-[250px]">
                   {/* Tiempos de entrega y recogida (Izquierda) */}
                   <div className="flex flex-col text-sm text-gray-500">
-                    <p>Entrega: {item.deliveryTime || "No disponible"}</p>
-                    <p>Recogida: {item.pickupTime || "No disponible"}</p>
+                    <p>Tiempo de Entrega: {item.deliveryTime || "No disponible"}</p>
+                    <p>Tiempo de Recogida: {item.pickupTime || "No disponible"}</p>
                   </div>
 
                   {/* Tabla de Stock (Derecha) */}
