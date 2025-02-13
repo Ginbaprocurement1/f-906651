@@ -1,3 +1,4 @@
+
 import { Button } from "@/components/ui/button";
 import { Trash2 } from "lucide-react";
 import { CartItem } from "@/types/order";
@@ -22,7 +23,11 @@ export const ProductList = ({ items, onUpdateQuantity, onRemoveItem }: ProductLi
   const navigate = useNavigate();
 
   const { data: deliveryTimes } = useQuery({
-    queryKey: ['delivery-times', items.map(item => item.id)],
+    queryKey: ['delivery-times', items.map(item => ({
+      id: item.id,
+      delivery_location_id: item.delivery_location_id,
+      pickup_location_id: item.pickup_location_id
+    }))],
     enabled: items.length > 0,
     queryFn: async () => {
       const deliveryTimes: Record<number, { deliveryDate: string; pickupDate: string }> = {};
@@ -46,6 +51,7 @@ export const ProductList = ({ items, onUpdateQuantity, onRemoveItem }: ProductLi
                 quantity,
                 location_id,
                 master_suppliers_locations!inner (
+                  pickup_location_id,
                   province_id
                 )
               `)
@@ -62,6 +68,7 @@ export const ProductList = ({ items, onUpdateQuantity, onRemoveItem }: ProductLi
             let minDistance = Infinity;
 
             for (const location of stockLocations) {
+              // Check both directions in delivery_province_distance
               const { data: distanceData } = await supabase
                 .from('delivery_province_distance')
                 .select('distance_km')
@@ -79,16 +86,17 @@ export const ProductList = ({ items, onUpdateQuantity, onRemoveItem }: ProductLi
               continue;
             }
 
-            // Get delivery time for the closest location
+            // Get delivery time from the closest location
             const { data: deliveryTime } = await supabase
               .from('delivery_times')
               .select('delivery_days')
-              .eq('province_id_a', clientLocation.province_id)
-              .eq('province_id_b', closestLocation.master_suppliers_locations.province_id)
+              .or(`and(province_id_a.eq.${clientLocation.province_id},province_id_b.eq.${closestLocation.master_suppliers_locations.province_id}),and(province_id_a.eq.${closestLocation.master_suppliers_locations.province_id},province_id_b.eq.${clientLocation.province_id})`)
               .maybeSingle();
 
-            const deliveryDays = deliveryTime?.delivery_days || "-";
-            deliveryTimes[item.id] = { deliveryDate: deliveryDays, pickupDate: "-" };
+            deliveryTimes[item.id] = { 
+              deliveryDate: deliveryTime?.delivery_days || "-", 
+              pickupDate: "-" 
+            };
 
           } else if (item.delivery_method === "Recogida" && item.pickup_location_id) {
             // Get pickup location details and check stock
