@@ -1,3 +1,5 @@
+import { useEffect, useState } from "react";
+import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Trash2 } from "lucide-react";
 import { CartItem } from "@/types/order";
@@ -16,24 +18,95 @@ interface ProductListProps {
   onRemoveItem: (id: number) => void;
 }
 
+const fetchDeliveryInfo = async (items) => {
+  return Promise.all(
+    items.map(async (item) => {
+      let deliveryDays = "-";
+      let pickupTime = "-";
+
+      try {
+        const { data: supplierData } = await supabase
+          .from("master_suppliers_company")
+          .select("supplier_id")
+          .eq("supplier_name", item.supplier_name)
+          .maybeSingle();
+
+        if (!supplierData) return { ...item, deliveryTime: deliveryDays, pickupTime };
+
+        if (item.delivery_method === "Envío" && item.delivery_location_id) {
+          const { data: locationData } = await supabase
+            .from("master_client_locations")
+            .select("province_id")
+            .eq("delivery_location_id", item.delivery_location_id)
+            .maybeSingle();
+
+          if (locationData) {
+            const destinationProvinceId = locationData.province_id;
+            
+            const { data: stockLocations } = await supabase
+              .from("supplier_stock")
+              .select("quantity, location_id, master_suppliers_locations(province_id)")
+              .eq("product_id", item.product_id)
+              .gt("quantity", 0);
+
+            if (stockLocations?.length) {
+              const closestLocation = stockLocations.find(
+                (stock) => stock.master_suppliers_locations.province_id === destinationProvinceId
+              );
+
+              if (closestLocation) {
+                const { data: deliveryTimeData } = await supabase
+                  .from("delivery_times")
+                  .select("delivery_days")
+                  .eq("supplier_id", supplierData.supplier_id)
+                  .eq("province_id_a", destinationProvinceId)
+                  .eq("province_id_b", destinationProvinceId)
+                  .maybeSingle();
+
+                if (deliveryTimeData) {
+                  deliveryDays = `${deliveryTimeData.delivery_days} días`;
+                }
+              }
+            }
+          }
+        } else if (item.delivery_method === "Recogida" && item.pickup_location_id) {
+          const { data: pickupData } = await supabase
+            .from("pickup_times")
+            .select("time_limit")
+            .eq("pickup_location_id", item.pickup_location_id)
+            .maybeSingle();
+
+          if (pickupData?.time_limit) {
+            const now = new Date();
+            const timeLimit = new Date(`${now.toDateString()} ${pickupData.time_limit}`);
+            pickupTime = now > timeLimit ? "Mañana" : "Hoy";
+          }
+        }
+      } catch (error) {
+        console.error("Error fetching delivery info:", error);
+      }
+
+      return { ...item, deliveryTime: deliveryDays, pickupTime };
+    })
+  );
+};
+
 export const ProductList = ({ items, onUpdateQuantity, onRemoveItem }: ProductListProps) => {
+  const [updatedItems, setUpdatedItems] = useState(items);
   const navigate = useNavigate();
-  
+
+  useEffect(() => {
+    fetchDeliveryInfo(items).then(setUpdatedItems);
+  }, [items]);
+
   return (
     <Accordion type="single" collapsible>
       <AccordionItem value="products">
-        <AccordionTrigger>
-          Mis productos
-        </AccordionTrigger>
+        <AccordionTrigger>Mis productos</AccordionTrigger>
         <AccordionContent>
           <div className="space-y-4">
-            {items.map((item) => (
-              <div 
-                key={item.id} 
-                className="flex items-start justify-between p-4 bg-gray-50 rounded-lg"
-              >
-                
-                {/* Imagen y detalles del producto */}
+            {updatedItems.map((item) => (
+              <div key={item.id} className="flex items-start justify-between p-4 bg-gray-50 rounded-lg">
                 <div className="flex gap-4 flex-1">
                   {item.product_image_url && (
                     <img 
@@ -44,73 +117,16 @@ export const ProductList = ({ items, onUpdateQuantity, onRemoveItem }: ProductLi
                     />
                   )}
                   <div className="flex-1">
-                    <p 
-                      className="font-bold cursor-pointer hover:text-primary"
-                      onClick={() => navigate(`/productos/${item.product_id}`)}
-                    >
+                    <p className="font-bold cursor-pointer hover:text-primary" onClick={() => navigate(`/productos/${item.product_id}`)}>
                       {item.product_name}
                     </p>
                     <p className="text-sm text-gray-500">{item.supplier_name}</p>
-
-                    {/* Controles de cantidad */}
-                    <div className="mt-2 flex items-center gap-2">
-                      <Button 
-                        variant="outline" 
-                        size="icon" 
-                        className="h-8 w-8"
-                        onClick={() => onUpdateQuantity(item.id, Math.max(1, item.quantity - 1))}
-                      >
-                        -
-                      </Button>
-                      <span className="w-8 text-center">{item.quantity}</span>
-                      <Button 
-                        variant="outline" 
-                        size="icon" 
-                        className="h-8 w-8"
-                        onClick={() => onUpdateQuantity(item.id, item.quantity + 1)}
-                      >
-                        +
-                      </Button>
-                    </div>
-
-                    {/* Precios */}
-                    <div className="mt-2">
-                      <p className="text-sm font-semibold">
-                        {item.price_without_vat}€ sin IVA
-                      </p>
-                      <p className="text-xs text-gray-500">
-                        {item.price_with_vat}€ con IVA
-                      </p>
-                    </div>
+                    <p>Tiempo de Entrega: {item.deliveryTime}</p>
+                    <p>Tiempo de Recogida: {item.pickupTime}</p>
+                    <StockTable productId={item.product_id} supplierName={item.supplier_name} className="border rounded-lg w-full" />
                   </div>
                 </div>
-
-                {/* Nueva columna: Tiempos de entrega/recogida + Stock */}
-                <div className="flex flex-row items-start gap-4 w-1/3 min-w-[250px]">
-                  {/* Tiempos de entrega y recogida (Izquierda) */}
-                  <div className="flex flex-col text-sm text-gray-500">
-                    <p>Tiempo de Entrega: {item.deliveryTime || "No disponible"}</p>
-                    <p>Tiempo de Recogida: {item.pickupTime || "No disponible"}</p>
-                  </div>
-
-                  {/* Tabla de Stock (Derecha) */}
-                  <div className="flex-1">
-                    <p className="text-sm font-semibold">Stock Disponible</p>
-                    <StockTable 
-                      productId={item.product_id} 
-                      supplierName={item.supplier_name}
-                      className="border rounded-lg w-full"
-                    />
-                  </div>
-                </div>
-
-                {/* Botón de eliminar */}
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  className="absolute right-0 top-1/2 -translate-y-1/2"
-                  onClick={() => onRemoveItem(item.id)}
-                >
+                <Button variant="ghost" size="icon" className="absolute right-0 top-1/2 -translate-y-1/2" onClick={() => onRemoveItem(item.id)}>
                   <Trash2 className="h-5 w-5 text-red-500" />
                 </Button>
               </div>
