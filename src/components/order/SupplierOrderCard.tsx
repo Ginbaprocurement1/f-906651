@@ -5,6 +5,7 @@ import { PaymentMethodSelect } from "./PaymentMethodSelect";
 import { LocationSelect } from "./LocationSelect";
 import { AddressForm } from "./AddressForm";
 import { ProductList } from "./ProductList";
+import { useState } from "react";
 
 interface SupplierOrderCardProps {
   supplier: string;
