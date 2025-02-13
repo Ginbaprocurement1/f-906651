@@ -1,4 +1,3 @@
-
 import { Button } from "@/components/ui/button";
 import { Trash2 } from "lucide-react";
 import { CartItem } from "@/types/order";
@@ -58,46 +57,44 @@ export const ProductList = ({ items, onUpdateQuantity, onRemoveItem }: ProductLi
               continue;
             }
 
-            // Get delivery times for each province combination
-            let minDeliveryDays = Infinity;
+            // Find the closest supplier location to the client
+            let closestLocation = null;
+            let minDistance = Infinity;
+
             for (const location of stockLocations) {
-              const { data: deliveryTime } = await supabase
-                .from('delivery_times')
-                .select('delivery_days')
-                .eq('province_id_a', clientLocation.province_id)
-                .eq('province_id_b', location.master_suppliers_locations.province_id)
+              const { data: distanceData } = await supabase
+                .from('delivery_province_distance')
+                .select('distance_km')
+                .or(`and(province_id_A.eq.${clientLocation.province_id},province_id_B.eq.${location.master_suppliers_locations.province_id}),and(province_id_A.eq.${location.master_suppliers_locations.province_id},province_id_B.eq.${clientLocation.province_id})`)
                 .maybeSingle();
 
-              if (deliveryTime?.delivery_days) {
-                const days = parseInt(deliveryTime.delivery_days);
-                if (days < minDeliveryDays) {
-                  minDeliveryDays = days;
-                }
+              if (distanceData && distanceData.distance_km < minDistance) {
+                minDistance = distanceData.distance_km;
+                closestLocation = location;
               }
             }
 
-            const deliveryDate = minDeliveryDays === Infinity ? "-" : 
-              new Date(Date.now() + minDeliveryDays * 24 * 60 * 60 * 1000).toLocaleDateString('es-ES', {
-                day: 'numeric',
-                month: 'long'
-              });
+            if (!closestLocation) {
+              deliveryTimes[item.id] = { deliveryDate: "-", pickupDate: "-" };
+              continue;
+            }
 
-            deliveryTimes[item.id] = { deliveryDate, pickupDate: "-" };
+            // Get delivery time for the closest location
+            const { data: deliveryTime } = await supabase
+              .from('delivery_times')
+              .select('delivery_days')
+              .eq('province_id_a', clientLocation.province_id)
+              .eq('province_id_b', closestLocation.master_suppliers_locations.province_id)
+              .maybeSingle();
+
+            const deliveryDays = deliveryTime?.delivery_days || "-";
+            deliveryTimes[item.id] = { deliveryDate: deliveryDays, pickupDate: "-" };
 
           } else if (item.delivery_method === "Recogida" && item.pickup_location_id) {
-            // Get pickup location details
-            const { data: pickupLocation } = await supabase
-              .from('master_suppliers_locations')
-              .select('province_id')
-              .eq('pickup_location_id', item.pickup_location_id)
-              .single();
-
-            if (!pickupLocation) continue;
-
-            // Check stock in the pickup location
+            // Get pickup location details and check stock
             const { data: stockInLocation } = await supabase
               .from('supplier_stock')
-              .select('location_id')
+              .select('quantity')
               .eq('product_id', item.product_id)
               .eq('location_id', item.pickup_location_id)
               .gt('quantity', 0)
@@ -122,8 +119,9 @@ export const ProductList = ({ items, onUpdateQuantity, onRemoveItem }: ProductLi
 
             // Compare with current time in Spain
             const now = new Date();
-            const timeLimit = new Date(now.toDateString() + ' ' + pickupTime.time_limit);
-            const pickupDate = now > timeLimit ? "Mañana" : "Hoy";
+            const spainTime = new Date(now.toLocaleString("en-US", { timeZone: "Europe/Madrid" }));
+            const timeLimit = new Date(spainTime.toDateString() + ' ' + pickupTime.time_limit);
+            const pickupDate = spainTime > timeLimit ? "Mañana" : "Hoy";
 
             deliveryTimes[item.id] = { deliveryDate: "-", pickupDate };
           }
