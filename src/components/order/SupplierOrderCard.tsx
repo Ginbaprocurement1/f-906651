@@ -1,11 +1,10 @@
+
 import { CartItem, Location, SupplierLocation } from "@/types/order";
 import { DeliveryMethodSelect } from "./DeliveryMethodSelect";
 import { PaymentMethodSelect } from "./PaymentMethodSelect";
 import { LocationSelect } from "./LocationSelect";
 import { AddressForm } from "./AddressForm";
 import { ProductList } from "./ProductList";
-import { supabase } from "@/integrations/supabase/client";
-import { useEffect, useState } from "react";
 
 interface SupplierOrderCardProps {
   supplier: string;
@@ -30,8 +29,6 @@ interface SupplierOrderCardProps {
   onSaveAddress: () => void;
   onUpdateQuantity: (id: number, quantity: number) => void;
   onRemoveItem: (id: number) => void;
-  deliveryTime?: string;  // Nuevo campo
-  pickupTime?: string;    // Nuevo campo
 }
 
 export const SupplierOrderCard = ({
@@ -152,14 +149,10 @@ export const SupplierOrderCard = ({
         </div>
 
         <ProductList
-  items={items.map(item => ({
-    ...item,
-    deliveryTime: item.deliveryTime || "-",
-    pickupTime: item.pickupTime || "-"
-  }))}
-  onUpdateQuantity={onUpdateQuantity}
-  onRemoveItem={onRemoveItem}
-/>
+          items={items}
+          onUpdateQuantity={onUpdateQuantity}
+          onRemoveItem={onRemoveItem}
+        />
       </div>
     </div>
   );
